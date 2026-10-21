@@ -1,4 +1,4 @@
-
+Doky
 # Kayatech3D Teklif
 
 STL dosyalarından gerçek dilimleme verileriyle 3D baskı teklifi hazırlamak için Next.js uygulaması.
