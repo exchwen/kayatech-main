@@ -18,6 +18,7 @@ type ThreeMfObject = {
   model: ThreeMfModel;
   id: string;
   mesh?: THREE.BufferGeometry;
+  externalPath?: string;
   components: Array<{ modelPath: string; objectId: string; transform: THREE.Matrix4 }>;
 };
 
@@ -150,6 +151,12 @@ function parseThreeMf(buffer: ArrayBuffer) {
         model,
         id,
         mesh: meshElement ? createThreeMfGeometry(meshElement, model.unit) : undefined,
+        externalPath: xmlAttribute(objectElement, "path")
+          ? normalizedArchivePath(
+              xmlAttribute(objectElement, "path")!,
+              path.split("/").slice(0, -1).join("/")
+            )
+          : undefined,
         components: []
       };
       for (const component of components ? childElements(components, "component") : []) {
@@ -178,6 +185,10 @@ function parseThreeMf(buffer: ArrayBuffer) {
     if (object.mesh) {
       const mesh = new THREE.Mesh(object.mesh, new THREE.MeshStandardMaterial({ color: 0xa8c9d8, roughness: 0.68, metalness: 0.04 }));
       parent.add(mesh);
+    }
+    if (object.externalPath) {
+      const externalObject = models.get(object.externalPath)?.objects.get(object.id);
+      if (externalObject) addObject(parent, externalObject, nextStack);
     }
     for (const component of object.components) {
       const childObject = models.get(component.modelPath)?.objects.get(component.objectId);
