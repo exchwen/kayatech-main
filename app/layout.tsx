@@ -4,6 +4,10 @@ import "./globals.css";
 import "./globals.css.additions.css";
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/kayatech3d-logo.jpeg",
+    shortcut: "/kayatech3d-logo.jpeg"
+  },
   title: "Kayatech3D | 3D Baskı Teklifi",
   description:
     "STL dosyanızı yükleyin, gerçek dilimleme verileriyle 3D baskı teklifinizi hazırlayın."

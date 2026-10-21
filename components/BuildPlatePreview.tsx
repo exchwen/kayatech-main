@@ -128,7 +128,8 @@ export default function BuildPlatePreview({
     renderer.domElement.style.display = "block";
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
-    host.replaceChildren(renderer.domElement);
+    // Keep React-owned status and overlay children intact; Three.js owns only this canvas.
+    host.appendChild(renderer.domElement);
 
     scene.add(new THREE.HemisphereLight(0xe8f5fa, 0x607482, 2.0));
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.1);
@@ -256,7 +257,9 @@ export default function BuildPlatePreview({
       controls.dispose();
       disposeScene(scene);
       renderer.dispose();
-      host.replaceChildren();
+      if (renderer.domElement.parentNode === host) {
+        host.removeChild(renderer.domElement);
+      }
     };
   }, [file, printer]);
 
