@@ -7,6 +7,7 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { strFromU8, unzipSync } from "three/examples/jsm/libs/fflate.module.js";
 
 const BED_MM = 256;
+const PREVIEW_LOG = "[BuildPlatePreview]";
 
 type ThreeMfModel = {
   path: string;
@@ -114,7 +115,14 @@ function createThreeMfGeometry(mesh: Element, unit: number) {
 }
 
 function parseThreeMf(buffer: ArrayBuffer) {
+  console.info(PREVIEW_LOG, "3MF parse başladı", { bytes: buffer.byteLength });
   const archive = unzipSync(new Uint8Array(buffer));
+  const archivePaths = Object.keys(archive);
+  console.info(PREVIEW_LOG, "ZIP açıldı", {
+    entries: archivePaths.length,
+    modelFiles: archivePaths.filter((path) => path.toLowerCase().endsWith(".model")),
+    relationshipFiles: archivePaths.filter((path) => path.toLowerCase().endsWith(".rels"))
+  });
   const xmlFiles = new Map<string, XMLDocument>();
   const parser = new DOMParser();
   for (const [path, bytes] of Object.entries(archive)) {
@@ -131,6 +139,11 @@ function parseThreeMf(buffer: ArrayBuffer) {
   const rootPath = rootRelationship
     ? normalizedArchivePath(xmlAttribute(rootRelationship, "Target") ?? "")
     : "3D/3dmodel.model";
+  console.info(PREVIEW_LOG, "Kök model bulundu", {
+    relationshipTarget: rootRelationship ? xmlAttribute(rootRelationship, "Target") : null,
+    rootPath,
+    availableXmlFiles: [...xmlFiles.keys()]
+  });
   if (!xmlFiles.has(rootPath)) throw new Error("3MF kök model dosyası bulunamadı.");
 
   const models = new Map<string, ThreeMfModel>();
@@ -173,6 +186,16 @@ function parseThreeMf(buffer: ArrayBuffer) {
       model.objects.set(id, object);
     }
     models.set(path, model);
+    console.info(PREVIEW_LOG, "Model XML çözüldü", {
+      path,
+      unitMm: model.unit,
+      objects: [...model.objects.values()].map((object) => ({
+        id: object.id,
+        hasMesh: Boolean(object.mesh),
+        externalPath: object.externalPath,
+        components: object.components.length
+      }))
+    });
   }
 
   const rootModel = models.get(rootPath);
@@ -215,6 +238,12 @@ function parseThreeMf(buffer: ArrayBuffer) {
     const itemPath = xmlAttribute(item, "path");
     const model = itemPath ? models.get(normalizedArchivePath(itemPath, rootPath.split("/").slice(0, -1).join("/"))) : rootModel;
     const object = model ? resolveObject(model.path, objectId) : undefined;
+    console.info(PREVIEW_LOG, "Build item", {
+      objectId,
+      itemPath,
+      resolvedModelPath: model?.path ?? null,
+      resolvedObject: object ? `${object.model.path}#${object.id}` : null
+    });
     if (!object) continue;
     const group = new THREE.Group();
     group.applyMatrix4(threeMfTransform(xmlAttribute(item, "transform"), rootModel.unit));
@@ -222,6 +251,15 @@ function parseThreeMf(buffer: ArrayBuffer) {
     addObject(group, object, new Set());
   }
   if (!result.children.length) throw new Error("Dosyada gösterilebilir 3D geometri bulunamadı.");
+  let meshCount = 0;
+  result.traverse((object) => {
+    if (object instanceof THREE.Mesh) meshCount += 1;
+  });
+  console.info(PREVIEW_LOG, "3MF sahnesi oluşturuldu", {
+    groups: result.children.length,
+    meshes: meshCount
+  });
+  if (!meshCount) throw new Error("3MF içinde mesh geometrisi bulunamadı.");
   return result;
 }
 
@@ -328,6 +366,11 @@ export default function BuildPlatePreview({
     const host = hostRef.current;
     if (!host) return;
 
+    console.info(PREVIEW_LOG, "Preview effect başladı", {
+      file: file ? { name: file.name, size: file.size, type: file.type } : null,
+      printer
+    });
+
     let stopped = false;
     let animationFrame = 0;
     const scene = new THREE.Scene();
@@ -340,6 +383,7 @@ export default function BuildPlatePreview({
       antialias: true,
       powerPreference: "high-performance"
     });
+    console.info(PREVIEW_LOG, "WebGL renderer oluşturuldu");
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.style.display = "block";
@@ -373,6 +417,7 @@ export default function BuildPlatePreview({
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      console.info(PREVIEW_LOG, "Canvas boyutu", { width, height });
     };
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(host);
@@ -396,6 +441,7 @@ export default function BuildPlatePreview({
     async function loadSelectedFile() {
       if (!file) return;
       try {
+        console.info(PREVIEW_LOG, "Dosya okunuyor", { name: file.name, size: file.size });
         const buffer = await file.arrayBuffer();
         if (stopped) return;
 
@@ -415,6 +461,10 @@ export default function BuildPlatePreview({
             })
           );
         }
+        console.info(PREVIEW_LOG, "Model oluşturuldu", {
+          format: is3mf ? "3MF" : "STL",
+          children: model.children.length
+        });
 
         // 3MF/STL coordinates are Z-up. Convert them to the Y-up Three.js scene.
         const modelRoot = new THREE.Group();
@@ -426,6 +476,11 @@ export default function BuildPlatePreview({
         if (bounds.isEmpty()) {
           throw new Error("Dosyada gösterilebilir 3D geometri bulunamadı.");
         }
+        console.info(PREVIEW_LOG, "Model sınırları", {
+          min: bounds.min.toArray(),
+          max: bounds.max.toArray(),
+          size: bounds.getSize(new THREE.Vector3()).toArray()
+        });
 
         if (!is3mf) {
           // An STL has no build-plate placement. Centre it on the plate and put its
@@ -452,9 +507,14 @@ export default function BuildPlatePreview({
         setOutsideBed(doesNotFit);
 
         scene.add(modelRoot);
+        console.info(PREVIEW_LOG, "Model sahneye eklendi", {
+          sceneChildren: scene.children.length,
+          outsideBed: doesNotFit
+        });
         controls.target.set(BED_MM / 2, Math.min(Math.max(size.y / 2, 0), BED_MM), -BED_MM / 2);
         controls.update();
       } catch (cause) {
+        console.error(PREVIEW_LOG, "Önizleme oluşturulamadı", cause);
         if (!stopped) {
           setError(
             cause instanceof Error
