@@ -23,7 +23,8 @@ type ThreeMfObject = {
 };
 
 function normalizedArchivePath(path: string, base = "") {
-  const parts = (path.startsWith("/") ? path.slice(1) : `${base}/${path}`)
+  const decodedPath = decodeURIComponent(path);
+  const parts = (decodedPath.startsWith("/") ? decodedPath.slice(1) : `${base}/${decodedPath}`)
     .split("/")
     .filter(Boolean);
   const result: string[] = [];
@@ -178,6 +179,15 @@ function parseThreeMf(buffer: ArrayBuffer) {
   if (!rootModel) throw new Error("3MF kök modeli kullanılamıyor.");
   const build = firstChild(xmlFiles.get(rootPath)!.documentElement, "build");
   const result = new THREE.Group();
+  const resolveObject = (modelPath: string, objectId: string) => {
+    const model = models.get(modelPath);
+    if (!model) return undefined;
+    const exact = model.objects.get(objectId);
+    if (exact) return exact;
+    // A few Bambu exports use a wrapper object ID in the root model while the
+    // referenced object file contains only one real object with another ID.
+    return model.objects.size === 1 ? model.objects.values().next().value as ThreeMfObject : undefined;
+  };
   const addObject = (parent: THREE.Group, object: ThreeMfObject, stack: Set<string>) => {
     const key = `${object.model.path}#${object.id}`;
     if (stack.has(key)) return;
@@ -187,11 +197,11 @@ function parseThreeMf(buffer: ArrayBuffer) {
       parent.add(mesh);
     }
     if (object.externalPath) {
-      const externalObject = models.get(object.externalPath)?.objects.get(object.id);
+      const externalObject = resolveObject(object.externalPath, object.id);
       if (externalObject) addObject(parent, externalObject, nextStack);
     }
     for (const component of object.components) {
-      const childObject = models.get(component.modelPath)?.objects.get(component.objectId);
+      const childObject = resolveObject(component.modelPath, component.objectId);
       if (!childObject) continue;
       const group = new THREE.Group();
       group.applyMatrix4(component.transform);
@@ -204,7 +214,7 @@ function parseThreeMf(buffer: ArrayBuffer) {
     if (!objectId) continue;
     const itemPath = xmlAttribute(item, "path");
     const model = itemPath ? models.get(normalizedArchivePath(itemPath, rootPath.split("/").slice(0, -1).join("/"))) : rootModel;
-    const object = model?.objects.get(objectId);
+    const object = model ? resolveObject(model.path, objectId) : undefined;
     if (!object) continue;
     const group = new THREE.Group();
     group.applyMatrix4(threeMfTransform(xmlAttribute(item, "transform"), rootModel.unit));
