@@ -74,14 +74,22 @@ function unitToMillimeters(unit: string | null) {
 
 function threeMfTransform(value: string | null, unit: number) {
   if (!value) return new THREE.Matrix4();
+
   const numbers = value.trim().split(/\s+/).map(Number);
-  if (numbers.length !== 12 || numbers.some((number) => !Number.isFinite(number))) {
+
+  if (
+    numbers.length !== 12 ||
+    numbers.some((number) => !Number.isFinite(number))
+  ) {
     throw new Error("3MF dosyasındaki dönüşüm geçersiz.");
   }
+
+  // 3MF dönüşümünü Three.js matris düzenine doğru aktar.
+  // Son üç değer X, Y ve Z konumunu belirtir.
   return new THREE.Matrix4().set(
-    numbers[0], numbers[1], numbers[2], numbers[3] * unit,
-    numbers[4], numbers[5], numbers[6], numbers[7] * unit,
-    numbers[8], numbers[9], numbers[10], numbers[11] * unit,
+    numbers[0], numbers[3], numbers[6], numbers[9] * unit,
+    numbers[1], numbers[4], numbers[7], numbers[10] * unit,
+    numbers[2], numbers[5], numbers[8], numbers[11] * unit,
     0, 0, 0, 1
   );
 }
