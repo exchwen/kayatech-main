@@ -5,9 +5,8 @@ export type PricingSettings = {
 };
 
 export const MACHINE_OPTIONS = [
-  { id: "standard", name: "Standart FDM", description: "Günlük parçalar için dengeli seçim", multiplier: 1 },
-  { id: "precision", name: "Hassas FDM", description: "Daha ince katman, daha temiz yüzey", multiplier: 1.25 },
-  { id: "fast", name: "Hızlı FDM", description: "Büyük ve hızlı prototipler", multiplier: 0.9 }
+  { id: "bambu-a1", name: "Bambu A1", description: "Renkli ve günlük baskılar için", multiplier: 1 },
+  { id: "bambu-p1s", name: "Bambu P1S", description: "Kapalı kasa, hızlı ve hassas", multiplier: 1.15 }
 ] as const;
 
 export type MachineId = (typeof MACHINE_OPTIONS)[number]["id"];

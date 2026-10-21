@@ -23,8 +23,28 @@ function ModelPreview({ file }: { file: File | null }) {
   return <div className="previewStage" ref={mountRef}>{!file && <div className="previewEmpty"><span>◇</span><p>Model önizlemesi burada görünür</p></div>}{previewError && <div className="previewError">{previewError}</div>}</div>;
 }
 
+function ReliablePreview({ file }: { file: File | null }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas || !file) return;
+    const context = canvas.getContext("2d"); if (!context) return;
+    let cancelled = false;
+    const draw = (points: number[][]) => {
+      if (cancelled) return;
+      const width = canvas.clientWidth || 600; const height = canvas.clientHeight || 315; const ratio = window.devicePixelRatio || 1;
+      canvas.width = width * ratio; canvas.height = height * ratio; context.setTransform(ratio, 0, 0, ratio, 0, 0); context.clearRect(0, 0, width, height);
+      if (!points.length) return;
+      const xs = points.map(p => p[0]); const ys = points.map(p => p[1]); const zs = points.map(p => p[2]); const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys), minZ = Math.min(...zs), maxZ = Math.max(...zs); const scale = Math.min(width / Math.max(maxX - minX, .01), height / Math.max(maxY - minY, .01)) * .58; const project = (p: number[]) => [width / 2 + ((p[0] - minX) - (p[2] - minZ) * .35) * scale - (maxX - minX) * scale / 2, height * .73 - (p[1] - minY) * scale + (p[2] - minZ) * scale * .18];
+      for (let i = 0; i < points.length; i += 3) { const triangle = points.slice(i, i + 3); if (triangle.length < 3) break; const projected = triangle.map(project); const shade = 100 + ((i / 3) % 5) * 13; context.beginPath(); context.moveTo(projected[0][0], projected[0][1]); projected.slice(1).forEach(p => context.lineTo(p[0], p[1])); context.closePath(); context.fillStyle = `rgb(45, ${shade + 70}, ${shade + 105})`; context.fill(); context.strokeStyle = "#9ee7f7"; context.globalAlpha = .45; context.stroke(); context.globalAlpha = 1; }
+    };
+    file.arrayBuffer().then(buffer => { if (file.name.toLowerCase().endsWith(".3mf")) { draw([]); return; } const view = new DataView(buffer); const points: number[][] = []; if (view.byteLength >= 84) { const count = view.getUint32(80, true); for (let i = 0; i < count && 84 + i * 50 + 50 <= view.byteLength; i++) for (let v = 0; v < 3; v++) { const offset = 84 + i * 50 + 12 + v * 12; points.push([view.getFloat32(offset, true), view.getFloat32(offset + 4, true), view.getFloat32(offset + 8, true)]); } } draw(points); }).catch(() => draw([]));
+    return () => { cancelled = true; };
+  }, [file]);
+  return <div className="reliablePreview"><canvas ref={canvasRef} />{file?.name.toLowerCase().endsWith(".3mf") && <div className="previewFileBadge">3MF MODEL</div>}{!file && <div className="previewEmpty"><span>◇</span><p>Model önizlemesi burada görünür</p></div>}</div>;
+}
+
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null); const [machine, setMachine] = useState<MachineId>("standard"); const [paintColor, setPaintColor] = useState<PaintColorId>("none"); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [result, setResult] = useState<SliceResult | null>(null); const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING_SETTINGS); const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null); const [machine, setMachine] = useState<MachineId>("bambu-a1"); const [paintColor, setPaintColor] = useState<PaintColorId>("none"); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [result, setResult] = useState<SliceResult | null>(null); const [pricing, setPricing] = useState<PricingSettings>(DEFAULT_PRICING_SETTINGS); const inputRef = useRef<HTMLInputElement>(null);
   const selectedMachine = MACHINE_OPTIONS.find(item => item.id === machine) ?? MACHINE_OPTIONS[0]; const selectedPaint = PAINT_OPTIONS.find(item => item.id === paintColor) ?? PAINT_OPTIONS[0]; const filamentCost = result ? result.filament_grams * pricing.filamentPricePerGram : 0; const machineCost = result ? result.estimated_seconds / 3600 * pricing.machinePricePerHour * selectedMachine.multiplier : 0; const paintCost = result && paintColor !== "none" ? pricing.paintLaborFee : 0; const total = filamentCost + machineCost + paintCost; const money = (value: number) => value.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   useEffect(() => { fetch("/api/pricing", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(data => data?.filamentPricePerGram !== undefined && setPricing(data)).catch(() => undefined); }, []);
   function selectFile(next: File | null) { if (!next) return; if (!/\.(stl|3mf)$/i.test(next.name)) return setError("Sadece .stl veya .3mf dosyaları kabul edilir."); if (!next.size || next.size > 25 * 1024 * 1024) return setError("Dosya boş olamaz ve 25 MB sınırını aşamaz."); setFile(next); setResult(null); setError(""); }
@@ -40,7 +60,7 @@ export default function Home() {
         <div className="fieldBlock"><label>03 / RENK SEÇİMİ</label><p>Baskı sonrası boya tercihini belirle.</p><div className="paintOptions">{PAINT_OPTIONS.map(option => <button type="button" key={option.id} className={`paintOption ${paintColor === option.id ? "active" : ""}`} onClick={() => setPaintColor(option.id)}><span className={`paintSwatch ${option.id === "none" ? "paintSwatchNone" : ""}`} style={option.hex ? { backgroundColor: option.hex } : undefined} />{option.label}</button>)}</div></div>
         <button className="primary" type="submit" disabled={busy || !file}>{busy ? "Model analiz ediliyor…" : "Teklifimi hesapla"}<span>→</span></button>{error && <div className="error" role="alert">{error}</div>}<p className="privacy">Dosyan yalnızca analiz amacıyla işlenir. Sipariş oluşturulmaz.</p>
       </section>
-      <section className="previewCard"><div className="sectionHeading"><div><label>MODEL ÖNİZLEMESİ</label><h2>{file ? "Modelin hazır" : "Modelin burada görünecek"}</h2></div><span className="liveBadge"><i /> CANLI</span></div><ModelPreview file={file} />{file && <div className="fileMeta"><span>{file.name}</span><span>{selectedMachine.name}</span></div>}{busy && <div className="analyzing"><span className="spinner" /> Model analiz ediliyor…</div>}
+      <section className="previewCard"><div className="sectionHeading"><div><label>MODEL ÖNİZLEMESİ</label><h2>{file ? "Modelin hazır" : "Modelin burada görünecek"}</h2></div><span className="liveBadge"><i /> CANLI</span></div><ReliablePreview file={file} />{file && <div className="fileMeta"><span>{file.name}</span><span>{selectedMachine.name}</span></div>}{busy && <div className="analyzing"><span className="spinner" /> Model analiz ediliyor…</div>}
         {result && <div className="quoteBox"><div className="quoteHeader"><div><label>TAHMİNİ TEKLİF</label><h3>Üretim özeti</h3></div><span>₺</span></div><div className="quoteLine"><span>Filament · {result.filament_grams.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} g</span><strong>{money(filamentCost)} TL</strong></div><div className="quoteLine"><span>Makine · {formatDuration(result.estimated_seconds)}</span><strong>{money(machineCost)} TL</strong></div><div className="quoteLine"><span>Renk · {selectedPaint.label}</span><strong>{money(paintCost)} TL</strong></div><div className="quoteTotal"><span>Tahmini toplam</span><strong>{money(total)} TL</strong></div></div>}
         {!result && !busy && <div className="previewHint">Modelini yüklediğinde önizleme ve teklif özeti burada görünecek.</div>}
       </section>
