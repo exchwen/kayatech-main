@@ -536,8 +536,14 @@ export default function BuildPlatePreview({
           sceneChildren: scene.children.length,
           outsideBed: doesNotFit
         });
-        controls.target.set(BED_MM / 2, Math.min(Math.max(size.y / 2, 0), BED_MM), -BED_MM / 2);
-        controls.update();
+        if (!is3mf) {
+          controls.target.set(
+            BED_MM / 2,
+            Math.min(Math.max(size.y / 2, 0), BED_MM),
+            -BED_MM / 2
+          );
+          controls.update();
+        }
       } catch (cause) {
         console.error(PREVIEW_LOG, "Önizleme oluşturulamadı", cause);
         if (!stopped) {
