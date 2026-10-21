@@ -4,9 +4,205 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
-import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
+import { strFromU8, unzipSync } from "three/examples/jsm/libs/fflate.module.js";
 
 const BED_MM = 256;
+
+type ThreeMfModel = {
+  path: string;
+  unit: number;
+  objects: Map<string, ThreeMfObject>;
+};
+
+type ThreeMfObject = {
+  model: ThreeMfModel;
+  id: string;
+  mesh?: THREE.BufferGeometry;
+  components: Array<{ modelPath: string; objectId: string; transform: THREE.Matrix4 }>;
+};
+
+function normalizedArchivePath(path: string, base = "") {
+  const parts = (path.startsWith("/") ? path.slice(1) : `${base}/${path}`)
+    .split("/")
+    .filter(Boolean);
+  const result: string[] = [];
+  for (const part of parts) {
+    if (part === ".") continue;
+    if (part === "..") result.pop();
+    else result.push(part);
+  }
+  return result.join("/");
+}
+
+function xmlAttribute(element: Element, name: string) {
+  for (let index = 0; index < element.attributes.length; index += 1) {
+    const attribute = element.attributes[index];
+    if (attribute.localName === name || attribute.name === name) return attribute.value;
+  }
+  return null;
+}
+
+function childElements(element: Element, localName: string) {
+  return Array.from(element.children).filter((child) => child.localName === localName);
+}
+
+function firstChild(element: Element, localName: string) {
+  return childElements(element, localName)[0] ?? null;
+}
+
+function unitToMillimeters(unit: string | null) {
+  switch ((unit ?? "micron").toLowerCase()) {
+    case "micron":
+    case "micrometer":
+    case "micrometers": return 0.001;
+    case "centimeter":
+    case "centimeters": return 10;
+    case "meter":
+    case "meters": return 1000;
+    case "inch":
+    case "inches": return 25.4;
+    case "foot":
+    case "feet": return 304.8;
+    case "millimeter":
+    case "millimeters":
+    default: return 1;
+  }
+}
+
+function threeMfTransform(value: string | null, unit: number) {
+  if (!value) return new THREE.Matrix4();
+  const numbers = value.trim().split(/\s+/).map(Number);
+  if (numbers.length !== 12 || numbers.some((number) => !Number.isFinite(number))) {
+    throw new Error("3MF dosyasındaki dönüşüm geçersiz.");
+  }
+  return new THREE.Matrix4().set(
+    numbers[0], numbers[1], numbers[2], numbers[3] * unit,
+    numbers[4], numbers[5], numbers[6], numbers[7] * unit,
+    numbers[8], numbers[9], numbers[10], numbers[11] * unit,
+    0, 0, 0, 1
+  );
+}
+
+function createThreeMfGeometry(mesh: Element, unit: number) {
+  const vertices = Array.from(mesh.getElementsByTagNameNS("*", "vertex"));
+  const triangles = Array.from(mesh.getElementsByTagNameNS("*", "triangle"));
+  if (!vertices.length || !triangles.length) return undefined;
+
+  const positions: number[] = [];
+  for (const vertex of vertices) {
+    positions.push(
+      Number(xmlAttribute(vertex, "x")) * unit,
+      Number(xmlAttribute(vertex, "y")) * unit,
+      Number(xmlAttribute(vertex, "z")) * unit
+    );
+  }
+  const indices: number[] = [];
+  for (const triangle of triangles) {
+    const values = ["v1", "v2", "v3"].map((name) => Number(xmlAttribute(triangle, name)));
+    if (values.every((value) => Number.isInteger(value) && value >= 0 && value < vertices.length)) {
+      indices.push(...values);
+    }
+  }
+  if (!indices.length || positions.some((value) => !Number.isFinite(value))) return undefined;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function parseThreeMf(buffer: ArrayBuffer) {
+  const archive = unzipSync(new Uint8Array(buffer));
+  const xmlFiles = new Map<string, XMLDocument>();
+  const parser = new DOMParser();
+  for (const [path, bytes] of Object.entries(archive)) {
+    if (!path.toLowerCase().endsWith(".model") && !path.toLowerCase().endsWith(".rels")) continue;
+    const document = parser.parseFromString(strFromU8(bytes), "application/xml");
+    if (document.getElementsByTagName("parsererror").length) continue;
+    xmlFiles.set(normalizedArchivePath(path), document);
+  }
+
+  const relationships = xmlFiles.get("_rels/.rels");
+  if (!relationships) throw new Error("3MF kök ilişkileri bulunamadı.");
+  const rootRelationship = Array.from(relationships.getElementsByTagNameNS("*", "Relationship"))
+    .find((relationship) => (xmlAttribute(relationship, "Type") ?? "").toLowerCase().endsWith("/3dmodel"));
+  const rootPath = rootRelationship
+    ? normalizedArchivePath(xmlAttribute(rootRelationship, "Target") ?? "")
+    : "3D/3dmodel.model";
+  if (!xmlFiles.has(rootPath)) throw new Error("3MF kök model dosyası bulunamadı.");
+
+  const models = new Map<string, ThreeMfModel>();
+  for (const [path, document] of xmlFiles) {
+    if (!path.toLowerCase().endsWith(".model")) continue;
+    const modelElement = document.documentElement;
+    const model: ThreeMfModel = {
+      path,
+      unit: unitToMillimeters(xmlAttribute(modelElement, "unit")),
+      objects: new Map()
+    };
+    const resources = firstChild(modelElement, "resources");
+    for (const objectElement of resources ? childElements(resources, "object") : []) {
+      const id = xmlAttribute(objectElement, "id");
+      if (!id) continue;
+      const meshElement = firstChild(objectElement, "mesh");
+      const components = firstChild(objectElement, "components");
+      const object: ThreeMfObject = {
+        model,
+        id,
+        mesh: meshElement ? createThreeMfGeometry(meshElement, model.unit) : undefined,
+        components: []
+      };
+      for (const component of components ? childElements(components, "component") : []) {
+        const componentPath = xmlAttribute(component, "path");
+        const objectId = xmlAttribute(component, "objectid");
+        if (!objectId) continue;
+        object.components.push({
+          modelPath: componentPath ? normalizedArchivePath(componentPath, path.split("/").slice(0, -1).join("/")) : path,
+          objectId,
+          transform: threeMfTransform(xmlAttribute(component, "transform"), model.unit)
+        });
+      }
+      model.objects.set(id, object);
+    }
+    models.set(path, model);
+  }
+
+  const rootModel = models.get(rootPath);
+  if (!rootModel) throw new Error("3MF kök modeli kullanılamıyor.");
+  const build = firstChild(xmlFiles.get(rootPath)!.documentElement, "build");
+  const result = new THREE.Group();
+  const addObject = (parent: THREE.Group, object: ThreeMfObject, stack: Set<string>) => {
+    const key = `${object.model.path}#${object.id}`;
+    if (stack.has(key)) return;
+    const nextStack = new Set(stack).add(key);
+    if (object.mesh) {
+      const mesh = new THREE.Mesh(object.mesh, new THREE.MeshStandardMaterial({ color: 0xa8c9d8, roughness: 0.68, metalness: 0.04 }));
+      parent.add(mesh);
+    }
+    for (const component of object.components) {
+      const childObject = models.get(component.modelPath)?.objects.get(component.objectId);
+      if (!childObject) continue;
+      const group = new THREE.Group();
+      group.applyMatrix4(component.transform);
+      parent.add(group);
+      addObject(group, childObject, nextStack);
+    }
+  };
+  for (const item of build ? childElements(build, "item") : []) {
+    const objectId = xmlAttribute(item, "objectid");
+    if (!objectId) continue;
+    const itemPath = xmlAttribute(item, "path");
+    const model = itemPath ? models.get(normalizedArchivePath(itemPath, rootPath.split("/").slice(0, -1).join("/"))) : rootModel;
+    const object = model?.objects.get(objectId);
+    if (!object) continue;
+    const group = new THREE.Group();
+    group.applyMatrix4(threeMfTransform(xmlAttribute(item, "transform"), rootModel.unit));
+    result.add(group);
+    addObject(group, object, new Set());
+  }
+  if (!result.children.length) throw new Error("Dosyada gösterilebilir 3D geometri bulunamadı.");
+  return result;
+}
 
 type BuildPlatePreviewProps = {
   file: File | null;
@@ -185,7 +381,7 @@ export default function BuildPlatePreview({
         const is3mf = file.name.toLowerCase().endsWith(".3mf");
         let model: THREE.Object3D;
         if (is3mf) {
-          model = new ThreeMFLoader().parse(buffer);
+          model = parseThreeMf(buffer);
         } else {
           const geometry = new STLLoader().parse(buffer);
           geometry.computeVertexNormals();
