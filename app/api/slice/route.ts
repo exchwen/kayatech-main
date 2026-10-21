@@ -239,6 +239,8 @@ export async function POST(request: NextRequest) {
       }),
       originalFilename
     );
+    if (typeof body?.machine === "string") form.append("machine", body.machine);
+    form.append("preview", "true");
 
     // 8. STL dosyasını Cloud Run'a gönder.
     phase = "CLOUD_RUN_POST";

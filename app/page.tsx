@@ -6,7 +6,7 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
 import { DEFAULT_PRICING_SETTINGS, MACHINE_OPTIONS, PAINT_OPTIONS, type MachineId, type PaintColorId, type PricingSettings } from "@/lib/pricing";
 
-type SliceResult = { status: string; filename: string; filament_grams: number; estimated_seconds: number; estimated_minutes: number; layer_height_mm?: number; note?: string };
+type SliceResult = { status: string; filename: string; filament_grams: number; estimated_seconds: number; estimated_minutes: number; layer_height_mm?: number; note?: string; preview_url?: string; preview_image?: string };
 
 function formatDuration(seconds: number) { const hours = Math.floor(seconds / 3600); const minutes = Math.round((seconds % 3600) / 60); return hours ? `${hours} saat ${minutes} dakika` : `${minutes} dakika`; }
 
@@ -23,7 +23,7 @@ function ModelPreview({ file }: { file: File | null }) {
   return <div className="previewStage" ref={mountRef}>{!file && <div className="previewEmpty"><span>◇</span><p>Model önizlemesi burada görünür</p></div>}{previewError && <div className="previewError">{previewError}</div>}</div>;
 }
 
-function ReliablePreview({ file }: { file: File | null }) {
+function ReliablePreview({ file, previewUrl }: { file: File | null; previewUrl?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas || !file) return;
@@ -40,7 +40,7 @@ function ReliablePreview({ file }: { file: File | null }) {
     file.arrayBuffer().then(buffer => { if (file.name.toLowerCase().endsWith(".3mf")) { draw([]); return; } const view = new DataView(buffer); const points: number[][] = []; if (view.byteLength >= 84) { const count = view.getUint32(80, true); for (let i = 0; i < count && 84 + i * 50 + 50 <= view.byteLength; i++) for (let v = 0; v < 3; v++) { const offset = 84 + i * 50 + 12 + v * 12; points.push([view.getFloat32(offset, true), view.getFloat32(offset + 4, true), view.getFloat32(offset + 8, true)]); } } draw(points); }).catch(() => draw([]));
     return () => { cancelled = true; };
   }, [file]);
-  return <div className="reliablePreview"><canvas ref={canvasRef} />{file?.name.toLowerCase().endsWith(".3mf") && <div className="previewFileBadge">3MF MODEL</div>}{!file && <div className="previewEmpty"><span>◇</span><p>Model önizlemesi burada görünür</p></div>}</div>;
+  return <div className="reliablePreview">{previewUrl ? <img className="bambuPreview" src={previewUrl} alt="Bambu Studio model önizlemesi" /> : <canvas ref={canvasRef} />}{file?.name.toLowerCase().endsWith(".3mf") && !previewUrl && <div className="previewFileBadge">3MF MODEL</div>}{!file && <div className="previewEmpty"><span>◇</span><p>Model önizlemesi burada görünür</p></div>}</div>;
 }
 
 export default function Home() {
@@ -60,7 +60,7 @@ export default function Home() {
         <div className="fieldBlock"><label>03 / RENK SEÇİMİ</label><p>Baskı sonrası boya tercihini belirle.</p><div className="paintOptions">{PAINT_OPTIONS.map(option => <button type="button" key={option.id} className={`paintOption ${paintColor === option.id ? "active" : ""}`} onClick={() => setPaintColor(option.id)}><span className={`paintSwatch ${option.id === "none" ? "paintSwatchNone" : ""}`} style={option.hex ? { backgroundColor: option.hex } : undefined} />{option.label}</button>)}</div></div>
         <button className="primary" type="submit" disabled={busy || !file}>{busy ? "Model analiz ediliyor…" : "Teklifimi hesapla"}<span>→</span></button>{error && <div className="error" role="alert">{error}</div>}<p className="privacy">Dosyan yalnızca analiz amacıyla işlenir. Sipariş oluşturulmaz.</p>
       </section>
-      <section className="previewCard"><div className="sectionHeading"><div><label>MODEL ÖNİZLEMESİ</label><h2>{file ? "Modelin hazır" : "Modelin burada görünecek"}</h2></div><span className="liveBadge"><i /> CANLI</span></div><ReliablePreview file={file} />{file && <div className="fileMeta"><span>{file.name}</span><span>{selectedMachine.name}</span></div>}{busy && <div className="analyzing"><span className="spinner" /> Model analiz ediliyor…</div>}
+      <section className="previewCard"><div className="sectionHeading"><div><label>MODEL ÖNİZLEMESİ</label><h2>{file ? "Modelin hazır" : "Modelin burada görünecek"}</h2></div><span className="liveBadge"><i /> CANLI</span></div><ReliablePreview file={file} previewUrl={result?.preview_image || result?.preview_url} />{file && <div className="fileMeta"><span>{file.name}</span><span>{selectedMachine.name}</span></div>}{busy && <div className="analyzing"><span className="spinner" /> Model analiz ediliyor…</div>}
         {result && <div className="quoteBox"><div className="quoteHeader"><div><label>TAHMİNİ TEKLİF</label><h3>Üretim özeti</h3></div><span>₺</span></div><div className="quoteLine"><span>Filament · {result.filament_grams.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} g</span><strong>{money(filamentCost)} TL</strong></div><div className="quoteLine"><span>Makine · {formatDuration(result.estimated_seconds)}</span><strong>{money(machineCost)} TL</strong></div><div className="quoteLine"><span>Renk · {selectedPaint.label}</span><strong>{money(paintCost)} TL</strong></div><div className="quoteTotal"><span>Tahmini toplam</span><strong>{money(total)} TL</strong></div></div>}
         {!result && !busy && <div className="previewHint">Modelini yüklediğinde önizleme ve teklif özeti burada görünecek.</div>}
       </section>

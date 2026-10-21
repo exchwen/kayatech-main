@@ -1,6 +1,7 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
+import "./globals.css.additions.css";
 
 export const metadata: Metadata = {
   title: "Kayatech3D | 3D Baskı Teklifi",
