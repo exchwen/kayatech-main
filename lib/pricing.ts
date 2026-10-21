@@ -4,13 +4,6 @@ export type PricingSettings = {
   paintLaborFee: number;
 };
 
-export const MACHINE_OPTIONS = [
-  { id: "bambu-a1", name: "Bambu A1", description: "Renkli ve günlük baskılar için", multiplier: 1 },
-  { id: "bambu-p1s", name: "Bambu P1S", description: "Kapalı kasa, hızlı ve hassas", multiplier: 1.15 }
-] as const;
-
-export type MachineId = (typeof MACHINE_OPTIONS)[number]["id"];
-
 export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
   filamentPricePerGram: 4,
   machinePricePerHour: 40,
