@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
+import BuildPlatePreview from "../components/BuildPlatePreview";
 import { DEFAULT_PRICING_SETTINGS, PAINT_OPTIONS, type PaintColorId, type PricingSettings } from "@/lib/pricing";
 
 type SliceResult = { status: string; filename: string; filament_grams: number; estimated_seconds: number; estimated_minutes: number; layer_height_mm?: number; note?: string; preview_url?: string; preview_image?: string };
@@ -59,7 +60,7 @@ export default function Home() {
         <div className="fieldBlock"><label>02 / RENK SEÇİMİ</label><p>Baskı sonrası boya tercihini belirle.</p><div className="paintOptions">{PAINT_OPTIONS.map(option => <button type="button" key={option.id} className={`paintOption ${paintColor === option.id ? "active" : ""}`} onClick={() => setPaintColor(option.id)}><span className={`paintSwatch ${option.id === "none" ? "paintSwatchNone" : ""}`} style={option.hex ? { backgroundColor: option.hex } : undefined} />{option.label}</button>)}</div></div>
         <button className="primary" type="submit" disabled={busy || !file}>{busy ? "Model analiz ediliyor…" : "Teklifimi hesapla"}<span>→</span></button>{error && <div className="error" role="alert">{error}</div>}<p className="privacy">Dosyan yalnızca analiz amacıyla işlenir. Sipariş oluşturulmaz.</p>
       </section>
-      <section className="previewCard"><div className="sectionHeading"><div><label>MODEL ÖNİZLEMESİ</label><h2>{file ? "Modelin hazır" : "Modelin burada görünecek"}</h2></div><span className="liveBadge"><i /> CANLI</span></div><ReliablePreview file={file} previewUrl={result?.preview_image || result?.preview_url} />{file && <div className="fileMeta"><span>{file.name}</span></div>}{busy && <div className="analyzing"><span className="spinner" /> Model analiz ediliyor…</div>}
+      <section className="previewCard"><div className="sectionHeading"><div><label>MODEL ÖNİZLEMESİ</label><h2>{file ? "Modelin hazır" : "Modelin burada görünecek"}</h2></div><span className="liveBadge"><i /> CANLI</span></div><BuildPlatePreview file={file} printer="A1" />{file && <div className="fileMeta"><span>{file.name}</span></div>}{busy && <div className="analyzing"><span className="spinner" /> Model analiz ediliyor…</div>}
         {result && <div className="quoteBox"><div className="quoteHeader"><div><label>TAHMİNİ TEKLİF</label><h3>Üretim özeti</h3></div><span>₺</span></div><div className="quoteLine"><span>Filament · {result.filament_grams.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} g</span><strong>{money(filamentCost)} TL</strong></div><div className="quoteLine"><span>Makine · {formatDuration(result.estimated_seconds)}</span><strong>{money(machineCost)} TL</strong></div><div className="quoteLine"><span>Renk · {selectedPaint.label}</span><strong>{money(paintCost)} TL</strong></div><div className="quoteTotal"><span>Tahmini toplam</span><strong>{money(total)} TL</strong></div></div>}
         {!result && !busy && <div className="previewHint">Modelini yüklediğinde önizleme ve teklif özeti burada görünecek.</div>}
       </section>
