@@ -507,6 +507,31 @@ export default function BuildPlatePreview({
         setOutsideBed(doesNotFit);
 
         scene.add(modelRoot);
+        if (is3mf) {
+          // Bambu build items may be authored far from the origin. Frame the
+          // actual transformed model instead of relying on the fixed bed view.
+          const modelCentre = bounds.getCenter(new THREE.Vector3());
+          const largestDimension = Math.max(size.x, size.y, size.z, 1);
+          const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+          const distance = THREE.MathUtils.clamp(
+            (largestDimension / (2 * Math.tan(halfFov))) * 1.65,
+            120,
+            820
+          );
+          controls.target.copy(modelCentre);
+          camera.position.set(
+            modelCentre.x + distance * 0.9,
+            modelCentre.y + distance * 0.78,
+            modelCentre.z + distance * 0.9
+          );
+          camera.lookAt(modelCentre);
+          controls.update();
+          console.info(PREVIEW_LOG, "3MF kamera kadrajlandı", {
+            target: modelCentre.toArray(),
+            distance,
+            camera: camera.position.toArray()
+          });
+        }
         console.info(PREVIEW_LOG, "Model sahneye eklendi", {
           sceneChildren: scene.children.length,
           outsideBed: doesNotFit
