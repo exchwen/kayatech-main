@@ -276,12 +276,32 @@ type BuildPlatePreviewProps = {
   printer?: "A1" | "P1S";
   scalePercent?: number;
   onDimensions?: (dimensions: ModelDimensions | null) => void;
+  colorHex?: string | null;
+  supportPreviewUrl?: string | null;
+  showSupportPreview?: boolean;
 };
 
 export type ModelDimensions = { x: number; y: number; z: number };
 
 function finiteDimension(value: number) {
   return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+const DEFAULT_MODEL_COLOR = 0xa8c9d8;
+
+function updateModelMaterials(root: THREE.Object3D, colorHex: string | null | undefined) {
+  const color = colorHex && /^#[0-9a-f]{6}$/i.test(colorHex)
+    ? new THREE.Color(colorHex)
+    : new THREE.Color(DEFAULT_MODEL_COLOR);
+  root.traverse(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach(material => {
+      const materialWithColor = material as THREE.Material & { color?: THREE.Color };
+      materialWithColor.color?.copy(color);
+      material.needsUpdate = true;
+    });
+  });
 }
 
 function addBuildPlate(scene: THREE.Scene) {
@@ -374,16 +394,26 @@ export default function BuildPlatePreview({
   file,
   printer = "A1",
   scalePercent = 100,
-  onDimensions
+  onDimensions,
+  colorHex = null,
+  supportPreviewUrl = null,
+  showSupportPreview = false
 }: BuildPlatePreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const dimensionsCallbackRef = useRef(onDimensions);
+  const modelRootRef = useRef<THREE.Object3D | null>(null);
+  const colorRef = useRef(colorHex);
   const [error, setError] = useState("");
   const [outsideBed, setOutsideBed] = useState(false);
 
   useEffect(() => {
     dimensionsCallbackRef.current = onDimensions;
   }, [onDimensions]);
+
+  useEffect(() => {
+    colorRef.current = colorHex;
+    updateModelMaterials(modelRootRef.current ?? new THREE.Group(), colorHex);
+  }, [colorHex]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -479,7 +509,7 @@ export default function BuildPlatePreview({
           model = new THREE.Mesh(
             geometry,
             new THREE.MeshStandardMaterial({
-              color: 0xa8c9d8,
+              color: DEFAULT_MODEL_COLOR,
               roughness: 0.68,
               metalness: 0.04
             })
@@ -548,6 +578,8 @@ export default function BuildPlatePreview({
         setOutsideBed(doesNotFit);
 
         scene.add(modelRoot);
+        modelRootRef.current = modelRoot;
+        updateModelMaterials(modelRoot, colorRef.current);
         if (is3mf) {
           // Bambu build items may be authored far from the origin. Frame the
           // actual transformed model instead of relying on the fixed bed view.
@@ -609,6 +641,7 @@ export default function BuildPlatePreview({
       if (renderer.domElement.parentNode === host) {
         host.removeChild(renderer.domElement);
       }
+      modelRootRef.current = null;
     };
   }, [file, printer, scalePercent]);
 
@@ -639,6 +672,59 @@ export default function BuildPlatePreview({
         <span>Bambu Lab {printer}</span>
         <span>256 × 256 mm · Ölçek korunur</span>
       </div>
+      {showSupportPreview && supportPreviewUrl && (
+        <div
+          style={{
+            position: "absolute",
+            zIndex: 3,
+            inset: 0,
+            background: "#0b151df2",
+            display: "grid",
+            placeItems: "center",
+            padding: 12
+          }}
+        >
+          <img
+            src={supportPreviewUrl}
+            alt="Bambu Studio tarafından dilimlenmiş gerçek destek önizlemesi"
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+          />
+          <span
+            style={{
+              position: "absolute",
+              left: 12,
+              bottom: 12,
+              padding: "6px 8px",
+              borderRadius: 7,
+              background: "#102d3bee",
+              color: "#9de7f6",
+              fontSize: 10
+            }}
+          >
+            GERÇEK DİLİMLENMİŞ DESTEK ÖNİZLEMESİ
+          </span>
+        </div>
+      )}
+      {showSupportPreview && !supportPreviewUrl && (
+        <div
+          role="status"
+          style={{
+            position: "absolute",
+            zIndex: 4,
+            left: 12,
+            right: 12,
+            bottom: 12,
+            padding: "9px 11px",
+            borderRadius: 8,
+            background: "#5a351ce8",
+            border: "1px solid #e5a45a",
+            color: "#ffe3c2",
+            fontSize: 11
+          }}
+        >
+          Gerçek destek önizlemesi Cloud Run çıktısında mevcut değil; sahte destek geometrisi gösterilmiyor.
+        </div>
+      )}
       {outsideBed && (
         <div
           role="status"
