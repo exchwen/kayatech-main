@@ -84,7 +84,7 @@ function threeMfTransform(value: string | null, unit: number) {
     throw new Error("3MF dosyasındaki dönüşüm geçersiz.");
   }
 
-  // 3MF dönüşümünü Three.js matris düzenine doğru aktar.
+  // 3MF dönüşümünü Three.js matris düzenine doğru aktar.1
   // Son üç değer X, Y ve Z konumunu belirtir.
   return new THREE.Matrix4().set(
     numbers[0], numbers[3], numbers[6], numbers[9] * unit,
