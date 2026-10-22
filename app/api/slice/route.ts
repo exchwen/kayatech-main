@@ -139,6 +139,17 @@ export async function POST(request: NextRequest) {
     key = body?.key;
 
     const scalePercent = body?.scale_percent;
+    const supportEnabled =
+      body?.support_enabled === undefined
+        ? false
+        : body.support_enabled;
+
+    if (typeof supportEnabled !== "boolean") {
+      return NextResponse.json(
+        { error: "Destek seçimi geçersiz." },
+        { status: 400 }
+      );
+    }
     if (
       typeof scalePercent !== "number" ||
       !Number.isFinite(scalePercent) ||
@@ -254,6 +265,7 @@ export async function POST(request: NextRequest) {
     );
     form.append("preview", "true");
     form.append("scale_percent", String(scalePercent));
+    form.append("support_enabled", String(supportEnabled));
 
     // 8. STL dosyasını Cloud Run'a gönder.
     phase = "CLOUD_RUN_POST";
