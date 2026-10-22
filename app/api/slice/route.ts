@@ -41,6 +41,39 @@ function safeResponseText(value: string): string {
     .slice(0, 1200);
 }
 
+function normalizeSliceResult(value: unknown) {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return value;
+  }
+
+  const result = value as Record<string, unknown>;
+  const previewUrl = result.support_preview_url;
+  const previewExpiresAt = result.support_preview_expires_at;
+  const expiresTimestamp =
+    typeof previewExpiresAt === "string" ? Date.parse(previewExpiresAt) : Number.NaN;
+  let safeSupportPreviewUrl: string | null = null;
+
+  if (typeof previewUrl === "string") {
+    try {
+      const parsed = new URL(previewUrl);
+      if (
+        (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+        Number.isFinite(expiresTimestamp) &&
+        expiresTimestamp > Date.now()
+      ) {
+        safeSupportPreviewUrl = previewUrl;
+      }
+    } catch {
+      safeSupportPreviewUrl = null;
+    }
+  }
+
+  return {
+    ...result,
+    support_preview_url: safeSupportPreviewUrl
+  };
+}
+
 function getErrorInfo(error: unknown) {
   const err =
     typeof error === "object" && error !== null
@@ -315,7 +348,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(normalizeSliceResult(result));
   } catch (error: unknown) {
     const details = getErrorInfo(error);
 
