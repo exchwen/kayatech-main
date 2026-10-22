@@ -277,7 +277,7 @@ type BuildPlatePreviewProps = {
   scalePercent?: number;
   onDimensions?: (dimensions: ModelDimensions | null) => void;
   colorHex?: string | null;
-  supportPreviewUrl?: string | null;
+  supportPreviewSegments?: SupportPreviewSegment[];
   showSupportPreview?: boolean;
 };
 
@@ -288,6 +288,57 @@ function finiteDimension(value: number) {
 }
 
 const DEFAULT_MODEL_COLOR = 0xa8c9d8;
+const SUPPORT_LINE_COLOR = 0xffb454;
+const MAX_SUPPORT_SEGMENTS = 2_500;
+const MAX_SUPPORT_POINTS = MAX_SUPPORT_SEGMENTS * 2;
+
+export type SupportPreviewSegment = [number, number, number, number, number, number];
+type SupportPoint = [number, number, number];
+
+function supportSegment(value: unknown): [SupportPoint, SupportPoint] | null {
+  if (!Array.isArray(value) || value.length < 6) return null;
+  const numbers = value.slice(0, 6);
+  if (!numbers.every(item => typeof item === "number" && Number.isFinite(item))) return null;
+  return [numbers.slice(0, 3) as SupportPoint, numbers.slice(3, 6) as SupportPoint];
+}
+
+function supportLinePositions(value: unknown) {
+  if (!Array.isArray(value)) return [] as number[];
+  const positions: number[] = [];
+  for (const item of value.slice(0, MAX_SUPPORT_SEGMENTS)) {
+    if (positions.length >= MAX_SUPPORT_POINTS * 3) break;
+    const segment = supportSegment(item);
+    if (!segment) continue;
+    for (const point of segment) {
+      // G-code is printer Z-up: (X, Y, Z) -> Three.js scene (X, Z, -Y).
+      positions.push(point[0], point[2], -point[1]);
+    }
+  }
+  return positions;
+}
+
+function renderSupportLines(scene: THREE.Scene, value: unknown, visible: boolean) {
+  const previous = scene.getObjectByName("gcode-support-preview");
+  if (previous) {
+    scene.remove(previous);
+    const renderable = previous as THREE.LineSegments & { geometry?: THREE.BufferGeometry; material?: THREE.Material };
+    renderable.geometry?.dispose();
+    renderable.material?.dispose();
+  }
+  if (!visible) return false;
+  const positions = supportLinePositions(value);
+  if (!positions.length) return false;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  const lines = new THREE.LineSegments(
+    geometry,
+    new THREE.LineBasicMaterial({ color: SUPPORT_LINE_COLOR, transparent: true, opacity: 0.95, depthWrite: false })
+  );
+  lines.name = "gcode-support-preview";
+  lines.renderOrder = 3;
+  scene.add(lines);
+  return true;
+}
 
 function updateModelMaterials(root: THREE.Object3D, colorHex: string | null | undefined) {
   const color = colorHex && /^#[0-9a-f]{6}$/i.test(colorHex)
@@ -396,13 +447,14 @@ export default function BuildPlatePreview({
   scalePercent = 100,
   onDimensions,
   colorHex = null,
-  supportPreviewUrl = null,
+  supportPreviewSegments,
   showSupportPreview = false
 }: BuildPlatePreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const dimensionsCallbackRef = useRef(onDimensions);
   const modelRootRef = useRef<THREE.Object3D | null>(null);
   const colorRef = useRef(colorHex);
+  const sceneRef = useRef<THREE.Scene | null>(null);
   const [error, setError] = useState("");
   const [outsideBed, setOutsideBed] = useState(false);
 
@@ -416,6 +468,12 @@ export default function BuildPlatePreview({
   }, [colorHex]);
 
   useEffect(() => {
+    if (sceneRef.current) {
+      renderSupportLines(sceneRef.current, supportPreviewSegments, showSupportPreview);
+    }
+  }, [supportPreviewSegments, showSupportPreview, file, scalePercent]);
+
+  useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
@@ -427,6 +485,7 @@ export default function BuildPlatePreview({
     let stopped = false;
     let animationFrame = 0;
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
     scene.background = new THREE.Color("#102532");
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1800);
@@ -453,6 +512,7 @@ export default function BuildPlatePreview({
     fillLight.position.set(-200, 180, -180);
     scene.add(fillLight);
     addBuildPlate(scene);
+    renderSupportLines(scene, supportPreviewSegments, showSupportPreview);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -642,6 +702,7 @@ export default function BuildPlatePreview({
         host.removeChild(renderer.domElement);
       }
       modelRootRef.current = null;
+      sceneRef.current = null;
     };
   }, [file, printer, scalePercent]);
 
@@ -672,7 +733,8 @@ export default function BuildPlatePreview({
         <span>Bambu Lab {printer}</span>
         <span>256 × 256 mm · Ölçek korunur</span>
       </div>
-      {showSupportPreview && supportPreviewUrl && (
+      {/* Legacy image preview intentionally disabled; support segments are authoritative.
+      {false && (
         <div
           style={{
             position: "absolute",
@@ -685,7 +747,7 @@ export default function BuildPlatePreview({
           }}
         >
           <img
-            src={supportPreviewUrl}
+            src=""
             alt="Bambu Studio tarafından dilimlenmiş gerçek destek önizlemesi"
             style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
           />
@@ -705,7 +767,8 @@ export default function BuildPlatePreview({
           </span>
         </div>
       )}
-      {showSupportPreview && !supportPreviewUrl && (
+      */}
+      {showSupportPreview && !supportLinePositions(supportPreviewSegments).length && (
         <div
           role="status"
           style={{
