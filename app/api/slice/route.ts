@@ -12,7 +12,7 @@ export const maxDuration = 300;
 const SERVICE_URL = process.env.SLICER_SERVICE_URL;
 const MAX_BYTES = 25 * 1024 * 1024;
 const UPSTREAM_TIMEOUT_MS = 270_000;
-const MAX_SUPPORT_PREVIEW_SEGMENTS = 20_000;
+const MAX_SUPPORT_PREVIEW_SEGMENTS = 2_500;
 
 function createR2Client(): S3Client {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -50,9 +50,14 @@ function normalizeSliceResult(value: unknown) {
   const result = value as Record<string, unknown>;
   const rawSupportSegments = result.support_preview_segments;
   const supportSegments = Array.isArray(rawSupportSegments)
-    ? typeof rawSupportSegments[0] === "number"
-      ? rawSupportSegments.slice(0, MAX_SUPPORT_PREVIEW_SEGMENTS * 6)
-      : rawSupportSegments.slice(0, MAX_SUPPORT_PREVIEW_SEGMENTS)
+    ? rawSupportSegments
+        .slice(0, MAX_SUPPORT_PREVIEW_SEGMENTS)
+        .filter(segment =>
+          Array.isArray(segment) &&
+          segment.length >= 6 &&
+          segment.slice(0, 6).every(value => typeof value === "number" && Number.isFinite(value))
+        )
+        .map(segment => (segment as number[]).slice(0, 6))
     : [];
   const previewUrl = result.support_preview_url;
   const previewExpiresAt = result.support_preview_expires_at;

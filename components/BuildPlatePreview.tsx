@@ -277,7 +277,7 @@ type BuildPlatePreviewProps = {
   scalePercent?: number;
   onDimensions?: (dimensions: ModelDimensions | null) => void;
   colorHex?: string | null;
-  supportPreviewSegments?: unknown;
+  supportPreviewSegments?: SupportPreviewSegment[];
   showSupportPreview?: boolean;
 };
 
@@ -289,52 +289,23 @@ function finiteDimension(value: number) {
 
 const DEFAULT_MODEL_COLOR = 0xa8c9d8;
 const SUPPORT_LINE_COLOR = 0xffb454;
-const MAX_SUPPORT_SEGMENTS = 20_000;
+const MAX_SUPPORT_SEGMENTS = 2_500;
 const MAX_SUPPORT_POINTS = MAX_SUPPORT_SEGMENTS * 2;
 
+export type SupportPreviewSegment = [number, number, number, number, number, number];
 type SupportPoint = [number, number, number];
 
-function supportPoint(value: unknown): SupportPoint | null {
-  if (Array.isArray(value) && value.length >= 3) {
-    const point = value.slice(0, 3).map(Number);
-    return point.every(Number.isFinite) ? point as SupportPoint : null;
-  }
-  if (typeof value === "object" && value !== null) {
-    const pointValue = value as Record<string, unknown>;
-    const point = [pointValue.x, pointValue.y, pointValue.z].map(Number);
-    return point.every(Number.isFinite) ? point as SupportPoint : null;
-  }
-  return null;
-}
-
 function supportSegment(value: unknown): [SupportPoint, SupportPoint] | null {
-  if (Array.isArray(value) && value.length >= 6 && value.every(item => typeof item !== "object")) {
-    const numbers = value.slice(0, 6).map(Number);
-    if (numbers.every(Number.isFinite)) {
-      return [numbers.slice(0, 3) as SupportPoint, numbers.slice(3, 6) as SupportPoint];
-    }
-  }
-  if (Array.isArray(value) && value.length >= 2) {
-    const start = supportPoint(value[0]);
-    const end = supportPoint(value[1]);
-    return start && end ? [start, end] : null;
-  }
-  if (typeof value === "object" && value !== null) {
-    const segment = value as Record<string, unknown>;
-    const start = supportPoint(segment.start ?? segment.from ?? [segment.x1, segment.y1, segment.z1]);
-    const end = supportPoint(segment.end ?? segment.to ?? [segment.x2, segment.y2, segment.z2]);
-    return start && end ? [start, end] : null;
-  }
-  return null;
+  if (!Array.isArray(value) || value.length < 6) return null;
+  const numbers = value.slice(0, 6);
+  if (!numbers.every(item => typeof item === "number" && Number.isFinite(item))) return null;
+  return [numbers.slice(0, 3) as SupportPoint, numbers.slice(3, 6) as SupportPoint];
 }
 
 function supportLinePositions(value: unknown) {
   if (!Array.isArray(value)) return [] as number[];
   const positions: number[] = [];
-  const values = typeof value[0] === "number"
-    ? Array.from({ length: Math.floor(value.length / 6) }, (_, index) => value.slice(index * 6, index * 6 + 6))
-    : value;
-  for (const item of values) {
+  for (const item of value.slice(0, MAX_SUPPORT_SEGMENTS)) {
     if (positions.length >= MAX_SUPPORT_POINTS * 3) break;
     const segment = supportSegment(item);
     if (!segment) continue;
@@ -762,6 +733,7 @@ export default function BuildPlatePreview({
         <span>Bambu Lab {printer}</span>
         <span>256 × 256 mm · Ölçek korunur</span>
       </div>
+      {/* Legacy image preview intentionally disabled; support segments are authoritative.
       {false && (
         <div
           style={{
@@ -795,6 +767,7 @@ export default function BuildPlatePreview({
           </span>
         </div>
       )}
+      */}
       {showSupportPreview && !supportLinePositions(supportPreviewSegments).length && (
         <div
           role="status"

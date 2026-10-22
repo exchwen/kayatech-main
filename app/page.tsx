@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
-import BuildPlatePreview, { type ModelDimensions } from "../components/BuildPlatePreview";
+import BuildPlatePreview, { type ModelDimensions, type SupportPreviewSegment } from "../components/BuildPlatePreview";
 import { DEFAULT_PRICING_SETTINGS, PAINT_OPTIONS, type PaintColorId, type PricingSettings } from "@/lib/pricing";
 
-type SliceResult = { status: string; filename: string; filament_grams: number; estimated_seconds: number; estimated_minutes: number; layer_height_mm?: number; note?: string; preview_url?: string; preview_image?: string; support_preview_segments?: unknown; support_preview_note?: string };
+type SliceResult = { status: string; filename: string; filament_grams: number; estimated_seconds: number; estimated_minutes: number; layer_height_mm?: number; note?: string; preview_url?: string; preview_image?: string; support_preview_segments?: SupportPreviewSegment[]; support_preview_note?: string };
 
 function formatDuration(seconds: number) { const hours = Math.floor(seconds / 3600); const minutes = Math.round((seconds % 3600) / 60); return hours ? `${hours} saat ${minutes} dakika` : `${minutes} dakika`; }
 
