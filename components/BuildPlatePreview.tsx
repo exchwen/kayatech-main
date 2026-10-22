@@ -274,7 +274,15 @@ function parseThreeMf(buffer: ArrayBuffer) {
 type BuildPlatePreviewProps = {
   file: File | null;
   printer?: "A1" | "P1S";
+  scalePercent?: number;
+  onDimensions?: (dimensions: ModelDimensions | null) => void;
 };
+
+export type ModelDimensions = { x: number; y: number; z: number };
+
+function finiteDimension(value: number) {
+  return Number.isFinite(value) && value >= 0 ? value : 0;
+}
 
 function addBuildPlate(scene: THREE.Scene) {
   const bed = new THREE.Mesh(
@@ -364,11 +372,18 @@ function disposeScene(scene: THREE.Scene) {
 
 export default function BuildPlatePreview({
   file,
-  printer = "A1"
+  printer = "A1",
+  scalePercent = 100,
+  onDimensions
 }: BuildPlatePreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const dimensionsCallbackRef = useRef(onDimensions);
   const [error, setError] = useState("");
   const [outsideBed, setOutsideBed] = useState(false);
+
+  useEffect(() => {
+    dimensionsCallbackRef.current = onDimensions;
+  }, [onDimensions]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -445,6 +460,7 @@ export default function BuildPlatePreview({
 
     setError("");
     setOutsideBed(false);
+    dimensionsCallbackRef.current?.(null);
 
     async function loadSelectedFile() {
       if (!file) return;
@@ -474,10 +490,26 @@ export default function BuildPlatePreview({
           children: model.children.length
         });
 
+        model.updateMatrixWorld(true);
+        const sourceBounds = new THREE.Box3().setFromObject(model);
+        if (sourceBounds.isEmpty()) {
+          throw new Error("Dosyada gosterilebilir 3D geometri bulunamadi.");
+        }
+        const sourceSize = sourceBounds.getSize(new THREE.Vector3());
+        dimensionsCallbackRef.current?.({
+          x: finiteDimension(sourceSize.x),
+          y: finiteDimension(sourceSize.y),
+          z: finiteDimension(sourceSize.z)
+        });
+
         // 3MF/STL coordinates are Z-up. Convert them to the Y-up Three.js scene.
         const modelRoot = new THREE.Group();
         modelRoot.add(model);
         modelRoot.rotation.x = -Math.PI / 2;
+        const safeScalePercent = Number.isFinite(scalePercent)
+          ? THREE.MathUtils.clamp(scalePercent, 50, 200)
+          : 100;
+        modelRoot.scale.setScalar(safeScalePercent / 100);
         modelRoot.updateMatrixWorld(true);
 
         let bounds = new THREE.Box3().setFromObject(modelRoot);
@@ -503,7 +535,8 @@ export default function BuildPlatePreview({
           bounds = new THREE.Box3().setFromObject(modelRoot);
         }
         // A 3MF can contain build-item transforms and the saved plate position.
-        // Keep those transforms as authored; do not scale or re-centre the project.
+        // Keep those transforms and relative object placement; scale the whole
+        // authored project uniformly without re-centring it.
         const size = bounds.getSize(new THREE.Vector3());
         const doesNotFit =
           bounds.min.x < -0.1 ||
@@ -577,7 +610,7 @@ export default function BuildPlatePreview({
         host.removeChild(renderer.domElement);
       }
     };
-  }, [file, printer]);
+  }, [file, printer, scalePercent]);
 
   return (
     <div

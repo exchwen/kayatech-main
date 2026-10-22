@@ -138,6 +138,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     key = body?.key;
 
+    const scalePercent = body?.scale_percent;
+    if (
+      typeof scalePercent !== "number" ||
+      !Number.isFinite(scalePercent) ||
+      scalePercent < 50 ||
+      scalePercent > 200
+    ) {
+      return NextResponse.json(
+        { error: "Ölçek yüzde 50 ile 200 arasında olmalıdır." },
+        { status: 400 }
+      );
+    }
+
     if (
       typeof key !== "string" ||
       !/^uploads\/[0-9a-f-]{36}\.(stl|3mf)$/i.test(key)
@@ -240,6 +253,7 @@ export async function POST(request: NextRequest) {
       originalFilename
     );
     form.append("preview", "true");
+    form.append("scale_percent", String(scalePercent));
 
     // 8. STL dosyasını Cloud Run'a gönder.
     phase = "CLOUD_RUN_POST";
