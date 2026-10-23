@@ -1041,6 +1041,16 @@ button,a { touch-action:manipulation; }
   }
 }
 
+/* Footer is document content, never a viewport overlay. */
+.siteShell {
+  padding-bottom: 32px !important;
+}
+
+.siteShell > footer {
+  position: static !important;
+  z-index: auto !important;
+}
+
 @media (max-width: 380px) {
   .siteShell {
     width: calc(100% - 16px);
@@ -1072,5 +1082,41 @@ button,a { touch-action:manipulation; }
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
+  }
+}
+
+/* Prevent decorative glow and the social dock from changing the mobile viewport. */
+@media (max-width: 760px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  .siteShell {
+    overflow-x: clip;
+    padding-bottom: 32px !important;
+  }
+
+  .siteShell::before {
+    display: none;
+  }
+
+  .socialDock {
+    position: static !important;
+    width: max-content;
+    max-width: 100%;
+    margin: 22px auto 0;
+    transform: none !important;
+    padding: 8px;
+    flex-direction: row;
+    background: linear-gradient(145deg, #102d38, #07131b);
+    backdrop-filter: none;
+  }
+
+  .siteShell > footer {
+    position: static !important;
+    z-index: auto !important;
+    margin-top: 18px;
+    width: 100%;
   }
 }
