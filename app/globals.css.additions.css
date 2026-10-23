@@ -472,3 +472,38 @@ footer > small { margin-left: auto; }
 footer .socialLinks { margin: 0 auto; }
 footer .socialLinks a { color: #e6fbff !important; background: #0c2a39 !important; border-color: #376579 !important; }
 @media (max-width: 760px) { .introBlock h1 { min-height: 0; } .progress { grid-template-columns: 1fr; gap: 7px; } .progressStep { padding: 9px 11px; } .stageCard, .stagePreview { min-height: 0; } .stagePreview .previewStage { height: 300px; } .previewFeatureList { grid-template-columns: 1fr; } footer { align-items: flex-start; flex-direction: column; gap: 13px; } footer .socialLinks, footer > small { margin-left: 0; } }
+
+/* Professional responsive layout */
+:root { --brand-navy:#172635; --brand-cyan:#66d9ee; --brand-ice:#eaf8fb; --brand-muted:#9bb5c1; --brand-line:#294655; }
+body { background: radial-gradient(circle at 10% -10%, #1c3b4b 0, transparent 34%), radial-gradient(circle at 90% 8%, #173346 0, transparent 28%), #08151f; }
+.siteShell { width: min(1180px, calc(100% - 48px)); max-width: none; padding: 0; }
+.topbar { height: 86px; }
+.brand img { width: 46px; height: 46px; border-radius: 12px; box-shadow: 0 8px 24px #0005; }
+.introBlock { max-width: 680px; padding: 82px 0 36px; }
+.introBlock h1 { min-height: 0; margin: 18px 0 20px; font-size: clamp(46px, 7vw, 86px); }
+.introBlock p { max-width: 590px; font-size: 15px; line-height: 1.75; }
+.progress { margin-bottom: 0; padding-bottom: 20px; }
+.workspace { display: flex; flex-direction: column; gap: 22px; padding: 22px 0 40px; }
+.workspace.stage-1 { align-items: center; min-height: 490px; }
+.workspace.stage-1 .stageCard { width: min(720px, 100%); }
+.stagePreview { order: 1; width: 100%; min-height: 0; padding: 30px; }
+.stageCard { order: 2; width: min(860px, 100%); min-height: 0; margin: 0 auto; padding: 34px; }
+.stagePreview .previewStage { width: 100%; height: clamp(340px, 52vw, 560px); margin: 26px 0 0; border-radius: 20px; }
+.stagePreview .previewHint { margin: 16px 0 0; }
+.stageCard .fieldBlock { margin-top: 32px; }
+.stageCard .quoteChoices { margin-top: 30px; }
+.stageCard .primary { margin-top: 28px; }
+.stageCard .orderActions { margin-top: 20px; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(190px, .65fr); gap: 12px; }
+.orderActions .primary, .orderActions .secondaryAction { min-height: 62px; padding: 18px 20px; border-radius: 14px; font-size: 13px; }
+.orderActions .primary { display: flex; }
+.secondaryAction { display: flex; }
+.stageCard .quoteBox { padding: 24px; }
+.stageCard .quoteBox .quoteTotal strong { font-size: 27px; }
+.stageCard .quoteLine { padding: 13px 0; }
+.quoteChoices button { min-height: 108px; padding: 16px; }
+.quoteChoices button span { color: #dceff4; font-size: 12px; }
+.quoteChoices button small { color: #9db9c4; font-size: 10px; }
+.trustRow { font-size: 11px; }
+footer { margin-top: 0; }
+@media (max-width: 760px) { .siteShell { width: min(100% - 28px, 560px); } .topbar { height: 74px; } .topbarLinks { gap: 0; } .topbarLinks span { display: none; } .introBlock { padding: 54px 0 30px; } .introBlock h1 { font-size: clamp(42px, 13vw, 66px); } .introBlock p { font-size: 13px; } .stagePreview, .stageCard { padding: 22px; } .stagePreview .previewStage { height: 330px; } .stageCard .orderActions { grid-template-columns: 1fr; } .quoteChoices { grid-template-columns: 1fr; } .progressStep b { font-size: 10px; } }
+@media (max-width: 430px) { .siteShell { width: calc(100% - 24px); } .brand { font-size: 12px; letter-spacing: .08em; } .brand img { width: 38px; height: 38px; } .introBlock { padding-top: 42px; } .progressStep { padding: 9px; } .stageCard, .stagePreview { padding: 18px; } .stageTitle h2 { font-size: 24px; } .dimensionsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stagePreview .previewStage { height: 280px; } }
