@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
   let phase = "START";
   let upstreamStatus: number | undefined;
   let upstreamBody: string | undefined;
+  let retainFile = false;
 
   try {
     // 1. Yapılandırmayı kontrol et.
@@ -189,6 +190,7 @@ export async function POST(request: NextRequest) {
       body?.support_enabled === undefined
         ? false
         : body.support_enabled;
+    retainFile = body?.retain_file === true;
 
     if (typeof supportEnabled !== "boolean") {
       return NextResponse.json(
@@ -393,7 +395,7 @@ export async function POST(request: NextRequest) {
     );
   } finally {
     // 11. Geçici STL dosyasını R2'den sil.
-    if (s3 && bucket && key) {
+    if (s3 && bucket && key && !retainFile) {
       try {
         await s3.send(
           new DeleteObjectCommand({

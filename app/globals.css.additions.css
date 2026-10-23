@@ -338,3 +338,40 @@
   .paintOptions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .quoteGrandTotal strong { font-size: 19px; }
 }
+
+/* Three-stage customer flow */
+.progress { gap: 8px; }
+.progress button { display: flex; gap: 8px; align-items: center; padding: 0 14px 18px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #a0afb7; font: 10px 'DM Mono', monospace; }
+.progress button.active { border-bottom-color: var(--blue); color: var(--blue); }
+.progress button b { font: 600 11px Manrope, Arial, sans-serif; color: var(--muted); }
+.progress button.active b { color: var(--ink); }
+.paintOption { position: relative; }
+.paintOption small { margin-left: auto; color: var(--blue); font-size: 8px; }
+.scalePanel { margin: 0 0 22px; padding: 15px; border: 1px solid var(--line); border-radius: 13px; background: #f8fbfc; }
+.scaleHeading { display: flex; justify-content: space-between; align-items: flex-start; }
+.scaleHeading p { margin: 6px 0 0; color: var(--muted); font-size: 10px; }
+.scaleHeading > strong { color: var(--blue); font-size: 20px; }
+.scaleSlider { width: 100%; margin: 17px 0 12px; accent-color: var(--blue); }
+.dimensionsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dimensionsGrid div { padding: 9px; border: 1px solid #e4edf0; border-radius: 8px; background: #fff; }
+.dimensionsGrid span { display: block; color: var(--muted); font: 8px 'DM Mono', monospace; }
+.dimensionsGrid strong { display: block; margin-top: 5px; color: var(--ink); font-size: 10px; }
+.scaleActions { display: flex; gap: 8px; margin-top: 13px; }
+.scaleButton, .scaleReset { border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); padding: 8px 10px; font-size: 10px; }
+.scaleButton { background: var(--navy); color: #fff; border-color: var(--navy); }
+.scaleApplied { display: block; margin-top: 10px; color: var(--muted); font-size: 9px; }
+.previewModeToggle { display: flex; gap: 5px; margin: 13px 0; padding: 4px; border-radius: 9px; background: #edf5f7; }
+.previewModeToggle button { flex: 1; border: 0; border-radius: 7px; padding: 9px 8px; background: transparent; color: var(--muted); font-size: 10px; }
+.previewModeToggle button.active { background: #fff; color: var(--ink); box-shadow: 0 2px 8px #17304212; }
+.quoteChoices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.quoteChoices button { display: flex; flex-direction: column; gap: 7px; align-items: flex-start; border: 1px solid var(--line); border-radius: 11px; padding: 12px; background: #fff; color: var(--muted); text-align: left; font-size: 10px; }
+.quoteChoices button.selected { border-color: var(--blue); background: #f0f9fc; color: var(--ink); box-shadow: 0 0 0 2px #2e8fb526; }
+.quoteChoices strong { color: var(--blue); font-size: 14px; }
+.orderActions { display: flex; gap: 9px; margin-top: 12px; }
+.orderActions .primary { text-decoration: none; }
+.secondaryAction { flex: 1; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--navy); border-radius: 11px; padding: 15px 17px; color: var(--navy); font-size: 11px; font-weight: 700; text-decoration: none; }
+.secondaryAction:hover { border-color: var(--blue); color: var(--blue); }
+.socialLinks { display: flex; gap: 7px; align-items: center; }
+.socialLinks a { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid var(--line); border-radius: 50%; color: var(--navy); text-decoration: none; font-size: 9px; font-weight: 800; transition: .2s ease; }
+.socialLinks a:hover { transform: translateY(-2px); border-color: var(--blue); color: var(--blue); }
+@media (max-width: 760px) { .progress button { padding-inline: 7px; } .dimensionsGrid { grid-template-columns: repeat(2, 1fr); } .orderActions { flex-direction: column; } footer { align-items: flex-start; } }

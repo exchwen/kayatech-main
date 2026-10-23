@@ -11,9 +11,8 @@ export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
 };
 
 export const PAINT_OPTIONS = [
-  { id: "none", label: "Boyasız", hex: null },
-  { id: "black", label: "Siyah", hex: "#171717" },
-  { id: "white", label: "Beyaz", hex: "#f1f1ed" },
+  { id: "black", label: "Siyah", hex: "#171717", free: true },
+  { id: "white", label: "Beyaz", hex: "#f1f1ed", free: true },
   { id: "gray", label: "Gri", hex: "#8b9299" },
   { id: "red", label: "Kırmızı", hex: "#e5484d" },
   { id: "gold", label: "Altın", hex: "#d6ad43" }
