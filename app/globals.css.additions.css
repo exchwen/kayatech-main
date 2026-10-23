@@ -507,3 +507,18 @@ body { background: radial-gradient(circle at 10% -10%, #1c3b4b 0, transparent 34
 footer { margin-top: 0; }
 @media (max-width: 760px) { .siteShell { width: min(100% - 28px, 560px); } .topbar { height: 74px; } .topbarLinks { gap: 0; } .topbarLinks span { display: none; } .introBlock { padding: 54px 0 30px; } .introBlock h1 { font-size: clamp(42px, 13vw, 66px); } .introBlock p { font-size: 13px; } .stagePreview, .stageCard { padding: 22px; } .stagePreview .previewStage { height: 330px; } .stageCard .orderActions { grid-template-columns: 1fr; } .quoteChoices { grid-template-columns: 1fr; } .progressStep b { font-size: 10px; } }
 @media (max-width: 430px) { .siteShell { width: calc(100% - 24px); } .brand { font-size: 12px; letter-spacing: .08em; } .brand img { width: 38px; height: 38px; } .introBlock { padding-top: 42px; } .progressStep { padding: 9px; } .stageCard, .stagePreview { padding: 18px; } .stageTitle h2 { font-size: 24px; } .dimensionsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stagePreview .previewStage { height: 280px; } }
+
+/* Equal option sizing and always-visible social links */
+.paintOptions { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.paintOption { width: 100%; min-height: 50px; justify-content: flex-start; }
+.paintOption small { margin-left: auto; white-space: nowrap; }
+.quoteChoices { align-items: stretch; }
+.quoteChoices button { width: 100%; min-height: 116px; height: 100%; }
+.dimensionsGrid div { min-height: 54px; }
+.progressStep { min-height: 53px; }
+footer .socialLinks { display: flex !important; visibility: visible !important; opacity: 1 !important; align-items: center; justify-content: center; gap: 9px; margin: 0 auto !important; }
+footer .socialLinks a { display: inline-flex !important; visibility: visible !important; opacity: 1 !important; align-items: center; gap: 7px; width: auto; min-width: 92px; height: 38px; padding: 0 12px; border-radius: 999px; color: #f3fdff !important; background: #123445 !important; border: 1px solid #4b8498 !important; text-decoration: none; }
+footer .socialLinks a b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #66d9ee; color: #08202b; font-size: 8px; }
+footer .socialLinks a span { display: inline !important; color: #f3fdff !important; font-size: 10px; font-weight: 700; }
+footer .socialLinks a:hover { transform: translateY(-2px); background: #1b5269 !important; border-color: #8cecff !important; }
+@media (max-width: 560px) { .paintOptions { grid-template-columns: repeat(2, minmax(0, 1fr)); } footer .socialLinks { width: 100%; justify-content: flex-start; flex-wrap: wrap; } footer .socialLinks a { min-width: 0; flex: 1 1 auto; } }
