@@ -427,3 +427,48 @@ footer { position:relative; z-index:1; min-height:78px; margin-top:8px; padding:
 .socialLinks a { border-color:#3c6576; background:#0d2635; color:#dff9ff; }
 .socialLinks a:hover { background:#164156; border-color:#6ee7ff; color:#fff; }
 @media (max-width:760px) { .siteShell { padding-inline:18px; } .introBlock { padding-top:46px; } .workspace { gap:16px; } .progress { overflow-x:auto; padding-bottom:14px; } .progress button { flex:0 0 auto; } footer { gap:14px; } .socialLinks { margin-left:0; } }
+
+/* Focused, one-stage-at-a-time layout */
+.introBlock h1 { min-height: 148px; }
+.progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-bottom: 20px; }
+.progressStep { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px 14px; border: 1px solid #284858; border-radius: 14px; background: #0b1c28; color: #88a4b1; }
+.progressStep span { display: grid; place-items: center; flex: 0 0 27px; width: 27px; height: 27px; border-radius: 50%; background: #163b4b; color: #9cb9c5; font: 10px "DM Mono", monospace; }
+.progressStep b { overflow: hidden; color: #9cb9c5; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.progressStep.current { border-color: #62ddfa; background: linear-gradient(135deg, #123b4d, #0e2937); box-shadow: 0 0 30px #62ddfa18; }
+.progressStep.current span { background: #62ddfa; color: #06202b; }
+.progressStep.current b { color: #fff; }
+.progressStep.done { border-color: #2e6579; }
+.progressStep.done span { background: #1c7189; color: #e9fbff; }
+.stageCard, .stagePreview { min-height: 560px; }
+.stageCard { display: flex; flex-direction: column; }
+.stageKicker { color: #62ddfa; font: 10px "DM Mono", monospace; letter-spacing: .14em; }
+.stageTitle { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-top: 10px; }
+.stageTitle h2 { margin: 0; font-size: 28px; letter-spacing: -.055em; }
+.stageFile { margin: 7px 0 0; color: #a8bdc8; font: 10px "DM Mono", monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backButton { align-self: flex-start; margin-bottom: 26px; padding: 0; border: 0; background: transparent; color: #9fc2cf; font-size: 11px; }
+.backButton:hover { color: #62ddfa; }
+.stageCard .fieldBlock { margin-top: 38px; }
+.stageCard .primary { margin-top: auto; }
+.stageCard .privacy { display: none; }
+.trustRow { display: flex; justify-content: space-between; margin-top: 18px; padding-top: 16px; border-top: 1px solid #284858; color: #8faeba; font-size: 10px; }
+.previewFeatureList { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 17px; }
+.previewFeatureList span { padding: 12px; border: 1px solid #284858; border-radius: 10px; background: #0b1d29; color: #b8ced7; font-size: 10px; line-height: 1.5; }
+.previewFeatureList b { display: block; margin-bottom: 4px; color: #62ddfa; font: 10px "DM Mono", monospace; }
+.stagePreview .previewStage { height: 390px; margin-top: 28px; }
+.stagePreview .previewHint { margin-top: 16px; padding: 13px 15px; border-radius: 10px; background: #0b1d29; color: #b7ccd5; }
+.stageCard .quoteChoices { margin-top: 38px; }
+.stageCard .quoteBox { margin-top: 14px; }
+.quoteBox { background: linear-gradient(145deg, #113a4c, #0b2634) !important; border: 1px solid #2b6579; color: #f4fbff; }
+.quoteBox .quoteHeader label, .quoteBox .quoteLine, .quoteBox .quoteTotal { color: #b8d3dd; }
+.quoteBox .quoteHeader h3, .quoteBox .quoteLine strong, .quoteBox .quoteTotal { color: #ffffff; }
+.quoteBox .quoteTotal strong { color: #70e8ff; }
+.stageCard .orderActions { margin-top: 14px; }
+footer { display: flex !important; align-items: center; gap: 28px; width: 100%; min-height: 94px; padding: 24px 0 34px; margin-top: 18px; border-top: 1px solid #284858; color: #a9c2cc !important; }
+footer > div { display: flex; flex-direction: column; gap: 5px; }
+footer strong { color: #f3fbff; font-size: 12px; letter-spacing: .1em; }
+footer strong span { color: #62ddfa; }
+footer small { color: #8ea9b5; font-size: 10px; }
+footer > small { margin-left: auto; }
+footer .socialLinks { margin: 0 auto; }
+footer .socialLinks a { color: #e6fbff !important; background: #0c2a39 !important; border-color: #376579 !important; }
+@media (max-width: 760px) { .introBlock h1 { min-height: 0; } .progress { grid-template-columns: 1fr; gap: 7px; } .progressStep { padding: 9px 11px; } .stageCard, .stagePreview { min-height: 0; } .stagePreview .previewStage { height: 300px; } .previewFeatureList { grid-template-columns: 1fr; } footer { align-items: flex-start; flex-direction: column; gap: 13px; } footer .socialLinks, footer > small { margin-left: 0; } }
