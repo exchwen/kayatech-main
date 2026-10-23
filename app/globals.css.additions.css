@@ -872,6 +872,87 @@ body::after { content:""; position:fixed; z-index:-2; inset:0; opacity:.22; poin
 .orderModalPanel input:focus,.orderModalPanel textarea:focus,.orderModalPanel select:focus { border-color:var(--neo-cyan); box-shadow:0 0 0 3px #4de2f21c; }
 .orderSubmit { margin-top:14px; }
 @media (max-width:760px) { .socialDock { top:auto; right:50%; bottom:76px; flex-direction:row; transform:translateX(50%); padding:8px; border-radius:18px; } .socialDock a { width:44px; height:44px; } .socialDock a img { width:32px; height:32px; } .stageCard .orderActions { grid-template-columns:1fr!important; } .stageCard .orderActions > a,.stageCard .orderActions > button { height:60px!important; min-height:60px!important; } .orderModalPanel { padding:28px 22px; } }
+
+/* Final cross-platform responsive layer */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+body { min-width:320px; overflow-x:hidden; overscroll-behavior-x:none; }
+button,a,input,textarea,select { -webkit-tap-highlight-color:transparent; }
+button,a { touch-action:manipulation; }
+.siteShell { width:min(1180px,calc(100% - 48px)); padding-bottom:96px; }
+.workspace { min-width:0; }
+.controlCard,.previewCard,.stageCard,.stagePreview { min-width:0; }
+.stagePreview .previewStage { min-height:0; }
+.stageCard .orderActions > a,.stageCard .orderActions > button { overflow:hidden; }
+.orderModal { padding:22px max(16px,env(safe-area-inset-left)) max(22px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-right)); }
+
+@media (max-width:900px) {
+  .siteShell { width:min(100% - 32px,720px); }
+  .workspace { grid-template-columns:minmax(0,1fr); }
+  .workspace.stage-2,.workspace.stage-3 { display:flex; flex-direction:column; }
+  .workspace.stage-2 .stagePreview,.workspace.stage-3 .stagePreview { order:-1; }
+  .stagePreview .previewStage { height:clamp(300px,58vw,440px); }
+  .stageCard .orderActions { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+  .quoteChoices { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width:640px) {
+  .siteShell { width:calc(100% - 24px); padding-bottom:178px; }
+  .topbar { height:68px; gap:12px; }
+  .brand { min-width:0; gap:8px; font-size:11px; letter-spacing:.06em; }
+  .brand img { width:36px; height:36px; flex:0 0 36px; }
+  .topbarLinks a { padding:8px 10px; font-size:10px; white-space:nowrap; }
+  .introBlock { padding:42px 0 24px; }
+  .introBlock h1 { font-size:clamp(40px,12vw,60px); line-height:.98; }
+  .introBlock p { max-width:100%; font-size:12px; line-height:1.65; }
+  .progress { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; overflow:visible; padding-bottom:14px; }
+  .progressStep { min-width:0; min-height:54px; padding:9px 7px; gap:5px; flex-direction:column; align-items:flex-start; border-radius:12px; }
+  .progressStep b { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px; }
+  .workspace { gap:14px; padding-top:16px; padding-bottom:30px; }
+  .controlCard,.previewCard,.stageCard,.stagePreview { padding:17px; border-radius:19px; }
+  .stageTitle h2,.sectionHeading h2 { font-size:22px; }
+  .stageFile { max-width:calc(100vw - 92px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dropzone { height:170px; margin:20px 0 20px; }
+  .previewColorPicker { margin-top:16px; padding:13px; }
+  .previewColorPicker .paintOptions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .stagePreview .previewStage { height:clamp(260px,72vw,360px); margin-top:18px; }
+  .dimensionsGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .dimensionsGrid div { min-width:0; padding:8px 7px; }
+  .dimensionsGrid strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .quoteChoices { grid-template-columns:1fr; }
+  .quoteChoices button { min-height:96px; }
+  .quoteLine { align-items:flex-start; font-size:10px; }
+  .quoteLine span { min-width:0; overflow-wrap:anywhere; }
+  .quoteTotal strong { font-size:20px; }
+  .stageCard .orderActions { grid-template-columns:1fr!important; gap:10px!important; }
+  .stageCard .orderActions > a,.stageCard .orderActions > button { height:58px!important; min-height:58px!important; padding:0 16px; }
+  .whatsappIcon { width:21px; height:21px; }
+  .socialDock { right:50%; bottom:calc(66px + env(safe-area-inset-bottom)); padding:7px; gap:8px; }
+  .socialDock a { width:42px; height:42px; border-radius:13px; }
+  .socialDock a img { width:30px; height:30px; }
+  .siteShell>footer { min-height:58px!important; height:auto!important; padding:9px 14px max(9px,env(safe-area-inset-bottom))!important; }
+  .siteShell>footer>div strong { font-size:11px; }
+  .siteShell>footer>small { font-size:9px; }
+  .orderModalPanel { width:100%; max-height:calc(100dvh - 30px); padding:26px 18px 20px; border-radius:20px; }
+  .orderModalPanel h2 { font-size:24px; padding-right:26px; }
+  .orderModalPanel input,.orderModalPanel textarea,.orderModalPanel select { font-size:16px; }
+  .orderSubmit { min-height:56px; }
+  .quoteLoadingPanel { width:min(100%,440px); padding:30px 18px 24px; }
+  .printLoadingAnimation { opacity:.6; }
+}
+
+@media (max-width:380px) {
+  .siteShell { width:calc(100% - 16px); }
+  .topbarLinks a { padding-inline:7px; font-size:9px; }
+  .progressStep { padding-inline:5px; }
+  .progressStep b { font-size:8px; }
+  .controlCard,.previewCard,.stageCard,.stagePreview { padding:14px; }
+  .paintOption { padding:8px 7px; font-size:9px; }
+  .stageCard .orderActions > a,.stageCard .orderActions > button { padding-inline:12px; font-size:11px; }
+}
+
+@media (hover:none) {
+  .socialDock a:hover,.primary:hover,.secondaryAction:hover { transform:none; }
+}
 .printLoadingAnimation { position:absolute; inset:0; pointer-events:none; opacity:.82; }
 .printLoadingAnimation canvas { display:block; width:100%; height:100%; }
 .quoteLoadingPanel { z-index:1; }
