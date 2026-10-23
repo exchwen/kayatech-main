@@ -43,7 +43,8 @@ function PrintLoadingAnimation({ file }: { file: File | null }) {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.matchMedia("(max-width: 640px)").matches ? 1.5 : 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.localClippingEnabled = true;
     mount.replaceChildren(renderer.domElement);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x18313d, 2.2));
@@ -68,15 +69,22 @@ function PrintLoadingAnimation({ file }: { file: File | null }) {
     camera.position.set(4.3, 3.1, 4.3); camera.lookAt(0, 0, 0);
     const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), -1.1);
     let printedObject: THREE.Object3D | null = null;
+    let printBaseY = -0.92;
+    let printHeight = 1.75;
     let startedAt = performance.now();
     file.arrayBuffer().then(buffer => file.name.toLowerCase().endsWith(".3mf") ? new ThreeMFLoader().parse(buffer) : new STLLoader().parse(buffer)).then(parsed => {
       if (disposed) return;
       const object = parsed instanceof THREE.BufferGeometry ? new THREE.Mesh(parsed, new THREE.MeshStandardMaterial({ color: 0x65d0ee, emissive: 0x0e5966, emissiveIntensity: 0.7, metalness: 0.1, roughness: 0.48 })) : parsed;
-      const box = new THREE.Box3().setFromObject(object); const size = box.getSize(new THREE.Vector3()); object.position.sub(box.getCenter(new THREE.Vector3())); object.scale.setScalar(1.75 / Math.max(size.x, size.y, size.z, 0.01)); object.position.y = -0.92;
+      const box = new THREE.Box3().setFromObject(object); const size = box.getSize(new THREE.Vector3()); object.position.sub(box.getCenter(new THREE.Vector3())); object.scale.setScalar(1.75 / Math.max(size.x, size.y, size.z, 0.01));
+      const normalizedBounds = new THREE.Box3().setFromObject(object);
+      printBaseY = -0.92;
+      object.position.y += printBaseY - normalizedBounds.min.y;
+      printHeight = Math.max(normalizedBounds.getSize(new THREE.Vector3()).y, 0.1);
+      clipPlane.constant = printBaseY;
       object.traverse(child => { if (!(child instanceof THREE.Mesh)) return; const materials = Array.isArray(child.material) ? child.material.map(material => material.clone()) : child.material.clone(); child.material = materials; if (Array.isArray(materials)) materials.forEach(material => { material.clippingPlanes = [clipPlane]; material.clipShadows = true; }); else { materials.clippingPlanes = [clipPlane]; materials.clipShadows = true; } });
       printedObject = object; printer.add(object); startedAt = performance.now();
     }).catch(() => undefined);
-    const animate = (now: number) => { if (disposed) return; const progress = ((now - startedAt) / 6200) % 1; clipPlane.constant = -1.08 + progress * 1.95; nozzle.position.x = Math.sin(progress * Math.PI * 8) * 1.18; nozzle.position.z = Math.cos(progress * Math.PI * 6) * 0.72; nozzle.position.y = 0.25 + progress * 1.08; nozzleHead.position.x = nozzle.position.x; nozzleHead.position.z = nozzle.position.z; nozzleHead.position.y = nozzle.position.y + 0.2; if (printedObject) printedObject.rotation.y += 0.002; renderer.render(scene, camera); requestAnimationFrame(animate); };
+    const animate = (now: number) => { if (disposed) return; const progress = ((now - startedAt) / 6200) % 1; const currentLayerY = printBaseY + progress * printHeight; clipPlane.constant = currentLayerY; nozzle.position.x = Math.sin(progress * Math.PI * 8) * 1.18; nozzle.position.z = Math.cos(progress * Math.PI * 6) * 0.72; nozzle.position.y = currentLayerY + 0.1; nozzleHead.position.x = nozzle.position.x; nozzleHead.position.z = nozzle.position.z; nozzleHead.position.y = nozzle.position.y + 0.2; if (printedObject) printedObject.rotation.y += 0.002; renderer.render(scene, camera); requestAnimationFrame(animate); };
     requestAnimationFrame(animate); window.addEventListener("resize", resize); return () => { disposed = true; window.removeEventListener("resize", resize); renderer.dispose(); mount.replaceChildren(); };
   }, [file]);
   return <div className="printLoadingAnimation" ref={mountRef} aria-label="Modelin katman katman 3D baskı animasyonu" />;
