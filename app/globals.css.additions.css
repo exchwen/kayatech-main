@@ -790,3 +790,21 @@ body::after { content:""; position:fixed; z-index:-2; inset:0; opacity:.22; poin
 .siteShell>footer .socialLinks a b { background:var(--neo-cyan); color:#05202a; }
 .siteShell>footer .socialLinks a span { color:#e8fbff!important; }
 .siteShell>footer .socialLinks a:hover { border-color:var(--neo-cyan)!important; background:#123e4c!important; box-shadow:0 0 20px #4de2f224; }
+.stage-2 .stageCard > .fieldBlock { display:none; }
+.previewColorPicker { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-top:22px; padding:16px 18px; border:1px solid #ffffff15; border-radius:16px; background:#091820; }
+.previewColorPicker > div:first-child { flex:0 0 auto; }
+.previewColorPicker p { margin:6px 0 0; color:var(--neo-muted); font-size:10px; }
+.previewColorPicker .paintOptions { flex:1; grid-template-columns:repeat(5,minmax(0,1fr)); }
+.previewColorPicker .paintOption { min-height:46px; }
+.supportNotice { margin:8px 0 0; color:#ff7d87; font-size:11px; line-height:1.5; }
+.buttonSpinner { display:inline-block; width:16px; height:16px; border:2px solid #03171e55; border-top-color:#03171e; border-radius:50%; animation:buttonSpin .75s linear infinite; vertical-align:-3px; }
+@keyframes buttonSpin { to { transform:rotate(360deg); } }
+.stageCard .orderActions { grid-template-columns:1fr 1fr!important; }
+.stageCard .orderActions > * { width:100%; min-width:0; }
+.siteShell>footer { min-height:58px!important; height:58px; padding-top:9px!important; padding-bottom:9px!important; }
+.siteShell>footer { min-height:58px!important; height:58px!important; }
+.siteShell>footer .socialLinks { position:absolute; left:50%; transform:translateX(-50%); }
+.siteShell>footer>div { flex:0 0 auto; }
+.siteShell>footer>div small { display:none; }
+.siteShell>footer>small { margin-left:auto; }
+@media (max-width:760px) { .previewColorPicker { align-items:stretch; flex-direction:column; gap:12px; } .previewColorPicker .paintOptions { grid-template-columns:repeat(2,minmax(0,1fr)); } .stageCard .orderActions { grid-template-columns:1fr!important; } .siteShell>footer { height:auto; min-height:96px!important; padding:10px 14px!important; } .siteShell>footer .socialLinks { position:static; transform:none; order:2; width:100%; justify-content:center; } .siteShell>footer>small { margin-left:0; order:3; width:100%; text-align:center; } }
