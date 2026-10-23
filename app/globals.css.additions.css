@@ -800,11 +800,51 @@ body::after { content:""; position:fixed; z-index:-2; inset:0; opacity:.22; poin
 .buttonSpinner { display:inline-block; width:16px; height:16px; border:2px solid #03171e55; border-top-color:#03171e; border-radius:50%; animation:buttonSpin .75s linear infinite; vertical-align:-3px; }
 @keyframes buttonSpin { to { transform:rotate(360deg); } }
 .stageCard .orderActions { grid-template-columns:1fr 1fr!important; }
-.stageCard .orderActions > * { width:100%; min-width:0; }
+.stageCard .orderActions > * { width:100%; min-width:0; height:64px; min-height:64px; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+.whatsappButtonContent { display:inline-flex; align-items:center; gap:11px; }
+.whatsappIcon { width:22px; height:22px; flex:0 0 22px; fill:currentColor; }
 .siteShell>footer { min-height:58px!important; height:58px; padding-top:9px!important; padding-bottom:9px!important; }
 .siteShell>footer { min-height:58px!important; height:58px!important; }
 .siteShell>footer .socialLinks { position:absolute; left:50%; transform:translateX(-50%); }
 .siteShell>footer>div { flex:0 0 auto; }
 .siteShell>footer>div small { display:none; }
 .siteShell>footer>small { margin-left:auto; }
-@media (max-width:760px) { .previewColorPicker { align-items:stretch; flex-direction:column; gap:12px; } .previewColorPicker .paintOptions { grid-template-columns:repeat(2,minmax(0,1fr)); } .stageCard .orderActions { grid-template-columns:1fr!important; } .siteShell>footer { height:auto; min-height:96px!important; padding:10px 14px!important; } .siteShell>footer .socialLinks { position:static; transform:none; order:2; width:100%; justify-content:center; } .siteShell>footer>small { margin-left:0; order:3; width:100%; text-align:center; } }
+@media (max-width:760px) { .previewColorPicker { align-items:stretch; flex-direction:column; gap:12px; } .previewColorPicker .paintOptions { grid-template-columns:repeat(2,minmax(0,1fr)); } .stageCard .orderActions { grid-template-columns:1fr!important; } .stageCard .orderActions > * { height:60px; min-height:60px; } .siteShell>footer { height:auto; min-height:96px!important; padding:10px 14px!important; } .siteShell>footer .socialLinks { position:static; transform:none; order:2; width:100%; justify-content:center; } .siteShell>footer>small { margin-left:0; order:3; width:100%; text-align:center; } }
+
+/* Full-screen quote analysis state */
+.quoteLoadingOverlay { position:fixed; z-index:200; inset:0; display:grid; place-items:center; padding:24px; background:rgba(3,9,14,.84); backdrop-filter:blur(18px) saturate(1.25); animation:loadingFadeIn .24s ease-out; }
+.quoteLoadingPanel { position:relative; width:min(100%,560px); overflow:hidden; padding:48px 44px 38px; border:1px solid #4de2f263; border-radius:28px; text-align:center; background:linear-gradient(145deg,#102d38f2,#08151df5); box-shadow:0 30px 100px #000b,0 0 70px #4de2f220,inset 0 1px #ffffff18; }
+.quoteLoadingPanel::before { content:""; position:absolute; width:280px; height:280px; left:50%; top:-160px; transform:translateX(-50%); border-radius:50%; background:#4de2f214; filter:blur(10px); pointer-events:none; }
+.loadingOrb { position:relative; width:78px; height:78px; margin:0 auto 25px; border:1px solid #4de2f270; border-radius:50%; background:radial-gradient(circle,#4de2f238 0 20%,#4de2f20b 48%,transparent 70%); box-shadow:0 0 42px #4de2f250,inset 0 0 22px #4de2f230; animation:loadingPulse 2s ease-in-out infinite; }
+.loadingOrb::before,.loadingOrb::after { content:""; position:absolute; inset:8px; border:1px dashed #c8f36b85; border-radius:50%; animation:loadingSpin 5s linear infinite; }
+.loadingOrb::after { inset:20px; border-style:solid; border-color:#4de2f2 transparent #4de2f2 transparent; animation-duration:2.2s; animation-direction:reverse; }
+.loadingOrb span,.loadingOrb i { position:absolute; z-index:1; top:50%; left:50%; width:8px; height:8px; transform:translate(-50%,-50%); border-radius:50%; background:var(--neo-lime); box-shadow:0 0 18px var(--neo-lime); }
+.loadingOrb i { width:4px; height:4px; background:#fff; box-shadow:0 0 12px #fff; }
+.loadingKicker { position:relative; color:var(--neo-cyan); font-size:10px; font-weight:800; letter-spacing:.22em; }
+.quoteLoadingPanel h2 { position:relative; margin:13px 0 10px; color:#edfbff; font-size:clamp(26px,4vw,38px); letter-spacing:-.04em; }
+.loadingLead { position:relative; max-width:410px; margin:0 auto; color:#b5d0d8; font-size:14px; line-height:1.65; }
+.loadingMessage { min-height:24px; margin:24px auto 18px; color:#c8f36b; font-size:12px; line-height:1.5; animation:loadingMessageIn .35s ease-out; }
+.loadingProgress { position:relative; height:5px; overflow:hidden; margin:0 auto; border-radius:999px; background:#ffffff12; }
+.loadingProgress span { display:block; width:35%; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--neo-cyan),var(--neo-lime)); box-shadow:0 0 15px #4de2f2; animation:loadingProgress 1.8s ease-in-out infinite; }
+.loadingMeta { position:relative; display:flex; justify-content:space-between; gap:15px; margin-top:18px; color:#7899a4; font-size:10px; }
+.loadingMeta span:first-child { color:#a9cbd3; }
+.loadingMeta i { display:inline-block; width:6px; height:6px; margin-right:5px; border-radius:50%; background:var(--neo-lime); box-shadow:0 0 10px var(--neo-lime); }
+@keyframes loadingFadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes loadingPulse { 0%,100% { transform:scale(.96); box-shadow:0 0 30px #4de2f230,inset 0 0 22px #4de2f230; } 50% { transform:scale(1.04); box-shadow:0 0 58px #4de2f270,inset 0 0 30px #4de2f250; } }
+@keyframes loadingSpin { to { transform:rotate(360deg); } }
+@keyframes loadingMessageIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+@keyframes loadingProgress { 0% { transform:translateX(-130%); } 50% { transform:translateX(100%); } 100% { transform:translateX(300%); } }
+
+/* The social links stay visible independently from footer flex/overflow rules. */
+.siteShell>footer .socialLinks { position:fixed!important; z-index:220!important; left:50%!important; bottom:11px!important; transform:translateX(-50%)!important; display:flex!important; align-items:center!important; justify-content:center!important; visibility:visible!important; opacity:1!important; pointer-events:auto!important; }
+.siteShell>footer .socialLinks a { display:inline-flex!important; visibility:visible!important; opacity:1!important; white-space:nowrap!important; }
+@media (max-width:760px) { .quoteLoadingOverlay { padding:16px; } .quoteLoadingPanel { padding:38px 22px 28px; border-radius:22px; } .loadingMeta { flex-direction:column; align-items:center; gap:7px; } .siteShell>footer .socialLinks { bottom:58px!important; width:calc(100vw - 28px)!important; overflow-x:auto; justify-content:flex-start!important; padding:4px 0; } }
+
+/* Compact social icon dock: upload the three SVG files to /public/social-icons/. */
+.siteShell>footer .socialLinks { gap:12px!important; }
+.siteShell>footer .socialLinks a { width:44px!important; height:44px!important; padding:0!important; justify-content:center!important; border-radius:14px!important; background:linear-gradient(145deg,#102f3b,#081820)!important; border:1px solid #4de2f278!important; box-shadow:0 0 18px #4de2f21a,inset 0 1px #ffffff1c; transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease!important; }
+.siteShell>footer .socialLinks a img { display:block; width:22px; height:22px; object-fit:contain; filter:drop-shadow(0 0 7px #4de2f270); }
+.siteShell>footer .socialLinks a:hover { transform:translateY(-4px) scale(1.05)!important; border-color:var(--neo-cyan)!important; box-shadow:0 0 30px #4de2f260,0 10px 24px #0008!important; }
+.siteShell>footer .socialLinks a:focus-visible { outline:2px solid var(--neo-lime); outline-offset:4px; }
+.supportField .supportNotice { margin:14px 0 0; padding-top:12px; border-top:1px solid #ff7d8738; }
+@media (max-width:760px) { .siteShell>footer .socialLinks { gap:10px!important; justify-content:center!important; } .siteShell>footer .socialLinks a { width:42px!important; height:42px!important; } }
